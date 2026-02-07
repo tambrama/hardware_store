@@ -1,0 +1,50 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${PSQL_NAME}
+      POSTGRES_USER: ${PSQL_USER}
+      POSTGRES_PASSWORD: ${PSQL_PASSWORD}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PSQL_USER} -d ${PSQL_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - pg:/var/lib/postgresql/data
+
+  migration:
+    build:
+      context: ./
+      dockerfile: build/migrator/Dockerfile
+    env_file:
+    - .env
+    command:
+    - sh
+    - -c
+    - |
+      goose -dir migrations postgres \
+        "host=db port=5432 user=$$PSQL_USER password=$$PSQL_PASSWORD dbname=$$PSQL_NAME sslmode=disable" \
+        up
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: ./
+      dockerfile: build/server/Dockerfile
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    env_file:
+      - .env
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+
+volumes:
+  pg:

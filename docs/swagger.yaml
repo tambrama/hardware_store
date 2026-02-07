@@ -1,0 +1,1089 @@
+basePath: /api/v1
+definitions:
+  hardware_store_internal_web_dto.AddressRequest:
+    description: Запрос на создание нового адреса с информацией о стране, городе и
+      улице
+    properties:
+      city:
+        example: Москва
+        maxLength: 50
+        minLength: 2
+        type: string
+      country:
+        example: Россия
+        maxLength: 50
+        minLength: 2
+        type: string
+      street:
+        example: Технопарк, 15
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - city
+    - country
+    - street
+    type: object
+  hardware_store_internal_web_dto.AddressResponse:
+    description: Данные адреса включая информацию о местоположении
+    properties:
+      address_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      city:
+        example: Москва
+        type: string
+      country:
+        example: Россия
+        type: string
+      street:
+        example: Технопарк, 15
+        type: string
+    type: object
+  hardware_store_internal_web_dto.CategoryRequest:
+    description: Запрос на создание новой категории товаров
+    properties:
+      category:
+        example: Холодильники
+        maxLength: 50
+        minLength: 2
+        type: string
+    required:
+    - category
+    type: object
+  hardware_store_internal_web_dto.CategoryResponse:
+    description: Данные категории включая уникальный идентификатор и название
+    properties:
+      category:
+        example: Холодильники
+        type: string
+      category_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  hardware_store_internal_web_dto.ClientRequest:
+    description: Запрос на создание нового товара с категорией, ценой и информацией
+      о поставщике
+    properties:
+      address:
+        $ref: '#/definitions/hardware_store_internal_web_dto.AddressRequest'
+      birthday:
+        example: "1999-01-01"
+        type: string
+      gender:
+        enum:
+        - male
+        - female
+        example: male
+        type: string
+      name:
+        example: Иван
+        maxLength: 50
+        minLength: 2
+        type: string
+      surname:
+        example: Иванов
+        maxLength: 50
+        minLength: 2
+        type: string
+    required:
+    - name
+    - surname
+    type: object
+  hardware_store_internal_web_dto.ClientResponse:
+    description: Данные клиента включая дату регистрации и ссылку на адрес
+    properties:
+      address_uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      birthday:
+        type: string
+      client_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      gender:
+        type: string
+      name:
+        type: string
+      registration_date:
+        type: string
+      surname:
+        type: string
+    type: object
+  hardware_store_internal_web_dto.ImageResponse:
+    description: Данные изображения включая уникальный идентификатор
+    properties:
+      image_id:
+        example: b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22
+        type: string
+    type: object
+  hardware_store_internal_web_dto.InternalErrorResponse:
+    properties:
+      error:
+        example: internal server error
+        type: string
+    type: object
+  hardware_store_internal_web_dto.NotFoundErrorResponse:
+    properties:
+      error:
+        example: client not found
+        type: string
+    type: object
+  hardware_store_internal_web_dto.ProductRequest:
+    description: Запрос на обновление количества товара на складе
+    properties:
+      available_stock:
+        example: 15
+        minimum: 0
+        type: integer
+      category_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: Холодильник Samsung RB38A7861B1
+        maxLength: 100
+        minLength: 2
+        type: string
+      price:
+        example: 75990
+        type: number
+      supplier_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - available_stock
+    - category_id
+    - name
+    - price
+    - supplier_id
+    type: object
+  hardware_store_internal_web_dto.ProductResponse:
+    description: Полная информация о товаре включая цену, остатки и информацию о поставщике
+    properties:
+      available_stock:
+        minimum: 0
+        type: integer
+      category:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      image:
+        example: b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22
+        type: string
+      last_update_date:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      price:
+        type: number
+      product_id:
+        example: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11
+        type: string
+      supplier:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    required:
+    - available_stock
+    - last_update_date
+    - name
+    - price
+    - product_id
+    type: object
+  hardware_store_internal_web_dto.SupplierRequest:
+    description: Запрос на создание нового поставщика с контактной информацией и адресом
+    properties:
+      address:
+        $ref: '#/definitions/hardware_store_internal_web_dto.AddressRequest'
+      name:
+        example: ООО 'ТехноСнаб'
+        maxLength: 100
+        minLength: 2
+        type: string
+      phone_number:
+        example: "+79561234567"
+        type: string
+    required:
+    - name
+    - phone_number
+    type: object
+  hardware_store_internal_web_dto.SupplierResponse:
+    description: Данные поставщика включая контактную информацию и ссылку на адрес
+    properties:
+      address_uuid:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: ООО 'ТехноСнаб'
+        type: string
+      phone_number:
+        example: "+79561234567"
+        type: string
+      supplier_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  hardware_store_internal_web_dto.UpdateStockCountRequest:
+    properties:
+      amount:
+        example: 5
+        type: integer
+    required:
+    - amount
+    type: object
+  hardware_store_internal_web_dto.ValidationErrorResponse:
+    properties:
+      error:
+        example: invalid uuid format
+        type: string
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: REST API для магазина бытовой техники
+  title: Hardware Store API
+  version: "1.0"
+paths:
+  /addresses:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новый адрес в системе на основе переданных данных
+      parameters:
+      - description: Данные адреса для создания
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.AddressRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Адрес успешно создан
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.AddressResponse'
+        "400":
+          description: Ошибки валидации полей или некорректный формат запроса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при сохранении адреса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Создать новый адрес
+      tags:
+      - addresses
+  /addresses/{id}:
+    delete:
+      description: Удаляет адрес по уникальному идентификатору UUID
+      parameters:
+      - description: UUID адреса
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Адрес успешно удалён
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Адрес не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при удалении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Удалить адрес
+      tags:
+      - addresses
+    get:
+      description: Возвращает полные данные адреса по уникальному идентификатору
+      parameters:
+      - description: UUID адреса
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Адрес успешно получен
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.AddressResponse'
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Адрес не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при получении адреса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить адрес
+      tags:
+      - addresses
+  /categories:
+    get:
+      description: Возвращает список всех категорий в системе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список категорий успешно получен
+          schema:
+            items:
+              $ref: '#/definitions/hardware_store_internal_web_dto.CategoryResponse'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера при получении списка
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить список категорий
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новую категорию в системе на основе переданных данных
+      parameters:
+      - description: Данные категории для создания
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.CategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Категория успешно создана
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.CategoryResponse'
+        "400":
+          description: Ошибки валидации полей или некорректный формат запроса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при сохранении категории
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Создать новую категорию
+      tags:
+      - categories
+  /categories/{id}:
+    delete:
+      description: Удаляет категорию по уникальному идентификатору UUID
+      parameters:
+      - description: UUID категории
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Категория успешно удалена
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Категория не найдена
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при удалении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Удалить категорию
+      tags:
+      - categories
+    get:
+      description: Возвращает полные данные категории по уникальному идентификатору
+      parameters:
+      - description: UUID категории
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Категория успешно получена
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.CategoryResponse'
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Категория не найдена
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при получении категории
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить категорию
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Обновляет данные категории по уникальному идентификатору
+      parameters:
+      - description: UUID категории
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные категории
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.CategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Категория успешно обновлена
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.CategoryResponse'
+        "400":
+          description: Невалидный UUID или ошибки валидации данных
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Категория не найдена
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при обновлении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Обновить категорию
+      tags:
+      - categories
+  /clients:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех клиентов в системе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список клиентов
+          schema:
+            items:
+              $ref: '#/definitions/hardware_store_internal_web_dto.ClientResponse'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить список всех клиентов
+      tags:
+      - clients
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового клиента вместе с адресом
+      parameters:
+      - description: Данные клиента
+        in: body
+        name: client
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.ClientRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Клиент успешно создан
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ClientResponse'
+        "400":
+          description: Невалидный запрос
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Создание клиента
+      tags:
+      - clients
+  /clients/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет клиента по его уникальному идентификатору
+      parameters:
+      - description: UUID клиента
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Клиент не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Удаление клиента
+      tags:
+      - clients
+    put:
+      consumes:
+      - application/json
+      description: Обновляет адрес клиента по его уникальному идентификатору
+      parameters:
+      - description: UUID клиента
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные адреса для обновления
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.AddressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Адрес успешно обновлён
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Клиент не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Обновить клиента
+      tags:
+      - clients
+  /clients/search:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о клиенте по имени и фамилии
+      parameters:
+      - description: Имя клиента
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: Фамилия клиента
+        in: query
+        name: surname
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешно
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ClientResponse'
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Клиент не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить клиента
+      tags:
+      - clients
+  /images/{id}:
+    delete:
+      description: Удаляет изображение по уникальному идентификатору UUID
+      parameters:
+      - description: UUID изображения
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Изображение успешно удалено
+        "400":
+          description: Невалидный формат UUID изображения
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Изображение не найдено
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при удалении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Удалить изображение
+      tags:
+      - images
+    get:
+      description: Возвращает бинарные данные изображения по уникальному идентификатору
+      parameters:
+      - description: UUID изображения
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Бинарные данные изображения
+        "400":
+          description: Невалидный формат UUID изображения
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Изображение не найдено
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при получении изображения
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить изображение по ID
+      tags:
+      - images
+    put:
+      consumes:
+      - application/octet-stream
+      description: Обновляет существующее изображение новыми бинарными данными
+      parameters:
+      - description: UUID изображения
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Бинарные данные изображения
+        in: body
+        name: image
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Изображение успешно обновлено
+        "400":
+          description: Невалидный формат UUID или некорректные данные изображения
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Изображение не найдено
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при обновлении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Обновить изображение
+      tags:
+      - images
+  /products:
+    get:
+      description: Возвращает список всех продуктов в системе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список продуктов успешно получен
+          schema:
+            items:
+              $ref: '#/definitions/hardware_store_internal_web_dto.ProductResponse'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера при получении списка
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить список продуктов
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новый продукт в системе на основе переданных данных
+      parameters:
+      - description: Данные продукта для создания
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.ProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Продукт успешно создан
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ProductResponse'
+        "400":
+          description: Ошибки валидации полей или некорректный формат запроса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при сохранении продукта
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Создать новый продукт
+      tags:
+      - products
+  /products/{id}:
+    delete:
+      description: Удаляет продукт по уникальному идентификатору UUID
+      parameters:
+      - description: UUID продукта
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Продукт успешно удалён
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Продукт не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при удалении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Удалить продукт
+      tags:
+      - products
+    get:
+      description: Возвращает полные данные продукта по уникальному идентификатору
+      parameters:
+      - description: UUID продукта
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Продукт успешно получен
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ProductResponse'
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Продукт не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при получении продукта
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить продукт
+      tags:
+      - products
+  /products/{id}/image:
+    get:
+      description: Возвращает изображение продукта по его уникальному идентификатору
+      parameters:
+      - description: UUID продукта
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Бинарные данные изображения
+        "400":
+          description: Невалидный формат UUID продукта
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Изображение не найдено
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при получении изображения
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить изображение продукта
+      tags:
+      - images
+    post:
+      consumes:
+      - application/octet-stream
+      description: Загружает новое изображение для указанного продукта
+      parameters:
+      - description: UUID продукта
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Бинарные данные изображения
+        in: body
+        name: image
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Изображение успешно загружено
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ImageResponse'
+        "400":
+          description: Невалидный формат UUID продукта или некорректные данные изображения
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при сохранении изображения
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Загрузить изображение для продукта
+      tags:
+      - images
+  /products/{id}/stock:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет доступное количество товара на складе для указанного
+        продукта
+      parameters:
+      - description: UUID продукта
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Новое количество товара
+        in: body
+        name: stock
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.UpdateStockCountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Количество товара успешно обновлено
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ProductResponse'
+        "400":
+          description: Невалидный формат запроса, отрицательное количество или недостаточный
+            остаток
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Продукт не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при обновлении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Обновить количество товара на складе
+      tags:
+      - products
+  /suppliers:
+    get:
+      description: Возвращает список всех поставщиков в системе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список поставщиков успешно получен
+          schema:
+            items:
+              $ref: '#/definitions/hardware_store_internal_web_dto.SupplierResponse'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера при получении списка
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить список поставщиков
+      tags:
+      - suppliers
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового поставщика вместе с его адресом в системе
+      parameters:
+      - description: Данные поставщика для создания
+        in: body
+        name: supplier
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.SupplierRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Поставщик успешно создан
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.SupplierResponse'
+        "400":
+          description: Ошибки валидации полей или некорректный формат запроса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при сохранении поставщика
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Создать нового поставщика
+      tags:
+      - suppliers
+  /suppliers/{id}:
+    delete:
+      description: Удаляет поставщика по уникальному идентификатору UUID
+      parameters:
+      - description: UUID поставщика
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Поставщик успешно удалён
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Поставщик не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при удалении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Удалить поставщика
+      tags:
+      - suppliers
+    get:
+      description: Возвращает полные данные поставщика по уникальному идентификатору
+      parameters:
+      - description: UUID поставщика
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Поставщик успешно получен
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.SupplierResponse'
+        "400":
+          description: Невалидный формат UUID
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Поставщик не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при получении поставщика
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Получить поставщика
+      tags:
+      - suppliers
+    put:
+      consumes:
+      - application/json
+      description: Обновляет адрес поставщика по его уникальному идентификатору
+      parameters:
+      - description: UUID поставщика
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновлённые данные адреса
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.AddressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Адрес поставщика успешно обновлён
+        "400":
+          description: Невалидный формат UUID или ошибки валидации данных
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Поставщик не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера при обновлении
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Обновить адрес поставщика
+      tags:
+      - suppliers
+swagger: "2.0"
