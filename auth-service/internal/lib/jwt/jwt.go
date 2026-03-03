@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 const (
 	AccessTokenTTL   = 60 * time.Minute   // короткий срок жизни
 	RefreshTokenTTL  = 7 * 24 * time.Hour // 7 дней
+	Issuer           = "auth-service"
 	TokenTypeAccess  = "access"
 	TokenTypeRefresh = "refresh"
 )
@@ -25,12 +27,15 @@ func NewJWTProvider(cfg *config.Config) *iwtProvider {
 	}
 }
 
-func (p *iwtProvider) generateToken(user model.Users, app model.App, duration time.Duration) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": user.ID.String(),
-		"email":   user.Mail,
-		"exp":     time.Now().Add(duration),
-		"app_id":  app.ID.String(),
+func (p *iwtProvider) generateToken(user, app uuid.UUID, duration time.Duration) (string, error) {
+	claims := model.CustomClaims{
+		UserID: user,
+		AppID:  app,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    Issuer,
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -38,15 +43,15 @@ func (p *iwtProvider) generateToken(user model.Users, app model.App, duration ti
 	return token.SignedString(p.secretKey)
 }
 
-func (p *iwtProvider) NewAccessToken(user model.Users, app model.App) (string, error) {
+func (p *iwtProvider) NewAccessToken(user, app uuid.UUID) (string, error) {
 	return p.generateToken(user, app, AccessTokenTTL)
 }
 
-func (p *iwtProvider) NewRefreshToken(user model.Users, app model.App) (string, error) {
+func (p *iwtProvider) NewRefreshToken(user, app uuid.UUID) (string, error) {
 	return p.generateToken(user, app, RefreshTokenTTL)
 }
 
-func (p *iwtProvider) ValidateToken(tokenString string) (*jwt.Token, error) {
+func (p *iwtProvider) ValidateToken(tokenString string) (*model.CustomClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
@@ -56,5 +61,9 @@ func (p *iwtProvider) ValidateToken(tokenString string) (*jwt.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	return token, nil
+	claims, ok := token.Claims.(*model.CustomClaims)
+	if !ok || !token.Valid {
+		return nil, model.ErrInvalidToken
+	}
+	return claims, nil
 }

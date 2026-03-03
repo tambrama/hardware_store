@@ -11,6 +11,7 @@ import (
 	jwtstorage "auth-service/internal/storage/sqlite/jwt"
 	userstorage "auth-service/internal/storage/sqlite/user"
 	web "auth-service/internal/web/grpc/auth"
+	"auth-service/internal/web/middleware"
 	"database/sql"
 	"log/slog"
 	"os"
@@ -54,6 +55,10 @@ var Module = fx.Options(
 
 		fx.Annotate(jwt.NewJWTProvider, fx.As(new(auth.JWTProvider))),
 
+		fx.Annotate(jwt.NewJWTProvider, fx.As(new(middleware.JWTProvider))),
+		fx.Annotate(auth.NewAuth, fx.As(new(middleware.AuthService))),
+		middleware.NewAuthInterceptor,
+		
 		fx.Annotate(auth.NewAuth, fx.As(new(web.Auth))),
 		grpcapp.NewApp,
 	),

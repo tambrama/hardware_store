@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"auth-service/internal/model"
 	"auth-service/internal/web/dto"
 	"context"
+	"errors"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
@@ -24,6 +26,8 @@ type Auth interface {
 	IsAdmin(ctx context.Context, userID uuid.UUID) (isAdmin bool, err error)
 	ChangePassword(ctx context.Context, email, oldPassword, newPassword string) error
 	RestorePassword(ctx context.Context, email string) error
+	RefreshToken(ctx context.Context, refreshToken, appId string) (string, string, error)
+	Logout(ctx context.Context, token string) error
 }
 
 func Register(gRPC *grpc.Server, auth Auth, validate *validator.Validate) {
@@ -41,12 +45,28 @@ func (s *serverAPI) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginR
 	}
 
 	if err := s.validate.Struct(input); err != nil {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			field := ve[0].Field()
+			switch field {
+			case "Email":
+				return nil, status.Error(codes.InvalidArgument, "empty or invalid email")
+			case "Password":
+				return nil, status.Error(codes.InvalidArgument, "password is required")
+			case "AppID":
+				return nil, status.Error(codes.InvalidArgument, "app_id is required")
+			default:
+				return nil, status.Errorf(codes.InvalidArgument, "invalid field: %s", field)
+			}
+		}
 		return nil, status.Error(codes.InvalidArgument, "invalid input")
 	}
 
 	accessToken, refreshToken, err := s.auth.Login(ctx, input.Email, input.Password, input.AppID)
 	if err != nil {
-		/////
+		if errors.Is(err, model.ErrInvalidCredentials) {
+			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
+		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return &pb.LoginResponse{
@@ -65,10 +85,32 @@ func (s *serverAPI) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.
 	}
 
 	if err := s.validate.Struct(input); err != nil {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			field := ve[0].Field()
+
+			switch field {
+			case "Email":
+				return nil, status.Error(codes.InvalidArgument, "invalid or empty email")
+			case "Password":
+				return nil, status.Error(codes.InvalidArgument, "password is required")
+			case "Name":
+				return nil, status.Error(codes.InvalidArgument, "name is required")
+			case "Surname":
+				return nil, status.Error(codes.InvalidArgument, "surname is required")
+			case "PhoneNumber":
+				return nil, status.Error(codes.InvalidArgument, "invalid phone number")
+			default:
+				return nil, status.Errorf(codes.InvalidArgument, "invalid field: %s", field)
+			}
+		}
 		return nil, status.Error(codes.InvalidArgument, "invalid input")
 	}
 	userID, err := s.auth.RegisterNewUser(ctx, input.Email, input.Password, input.Name, input.Surname, input.PhoneNumber)
 	if err != nil {
+		if errors.Is(err, model.ErrUserExists) {
+			return nil, status.Error(codes.AlreadyExists, "user already exists")
+		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return &pb.RegisterResponse{
@@ -114,5 +156,37 @@ func (s *serverAPI) RestorePassword(ctx context.Context, req *pb.RestorePassword
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
+	return &pb.Empty{}, nil
+}
+
+func (s *serverAPI) Refresh(ctx context.Context, req *pb.RefreshRequest) (*pb.LoginResponse, error) {
+	input := &dto.RefreshInput{
+		RefreshToken: req.GetRefreshToken(),
+		AppID:        req.GetAppId(),
+	}
+	if err := s.validate.Struct(input); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid input")
+	}
+
+	access, refresh, err := s.auth.RefreshToken(ctx, input.RefreshToken, input.AppID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &pb.LoginResponse{
+		AccessToken: access,
+		RefreshToken: refresh,
+	}, nil
+}
+func (s *serverAPI) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Empty, error) {
+	input := &dto.LogoutInput{
+		RefreshToken: req.GetRefreshToken(),
+	}
+	if input.RefreshToken == "" {
+		return nil,  status.Error(codes.InvalidArgument, "refresh token is required")
+	}
+	if err := s.auth.Logout(ctx, input.RefreshToken); err != nil {
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	
 	return &pb.Empty{}, nil
 }

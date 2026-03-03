@@ -9,20 +9,32 @@ import (
 )
 
 type Config struct {
-	Env         string        `yaml:"env" env-default:"local"`
-	StoragePath string        `yaml:"storage_path" env-required:"./data"`
-	TokenTTL    time.Duration `yaml:"token_ttl" env-default:"24h"`
-	GRPC        GRPCConfig    `yaml:"grpc"`
-	JWTSecretKey string `yaml:"jwt_secret_key"`
+	Env          string        `yaml:"env" env-default:"local"`
+	StoragePath  string        `yaml:"storage_path" env-required:"./storage/auth.db"`
+	TokenTTL     time.Duration `yaml:"token_ttl" env-default:"24h"`
+	GRPC         GRPCConfig    `yaml:"grpc"`
+	JWTSecretKey string        `yaml:"jwt_secret_key" env-required:"true"`
 }
 
 type GRPCConfig struct {
-	Port    int           `yaml:"port" env-default:"44044"`
+	Port    int           `yaml:"port" env-default:"9090"`
 	Timeout time.Duration `yaml:"timeout" env-default:"40s"`
 }
 
 func NewConfig() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		configPath = "config/local.yaml"
+
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			log.Fatalf("Config file not found at default path '%s' and no CONFIG_PATH provided", configPath)
+		}
+	}
+
+	return ConfigByPath(configPath)
+}
+
+func ConfigByPath(configPath string) *Config {
 	if configPath == "" {
 		log.Fatal("CONFIG_PATH environment variable is not set ")
 	}

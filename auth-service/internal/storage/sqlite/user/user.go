@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 )
 
 type storage struct {
 	db *sql.DB
-}	
+}
+
 func NewStorage(db *sql.DB) *storage {
 	return &storage{db: db}
 }
@@ -45,6 +47,22 @@ func (s *storage) GetUserByEmail(ctx context.Context, email string) (model.Users
 	}
 	return user, err
 }
+
+func (s *storage) GetUserByID(ctx context.Context, userID uuid.UUID) (model.Users, error) {
+	const op = "storage.sqlite.GetUserByID"
+	var user model.Users
+	query := `SELECT id, mail, hash_password, name, surname, phone_number FROM users WHERE id = ?`
+	row := s.db.QueryRowContext(ctx, query, userID)
+	err := row.Scan(&user.ID, &user.Mail, &user.Password, &user.Name, &user.Surname, &user.PhoneNumber)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return user, fmt.Errorf("%s: %w", op, model.ErrUserNotFound)
+		}
+		return user, fmt.Errorf("%s: %w", op, err)
+	}
+	return user, err
+}
+
 func (s *storage) UpdateUserPassword(ctx context.Context, email string, newPassword []byte) error {
 	const op = "storage.sqlite.UpdateUserPassword"
 	query := `UPDATE users SET hash_password = ? WHERE mail = ?`

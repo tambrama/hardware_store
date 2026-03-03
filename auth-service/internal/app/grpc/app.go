@@ -3,6 +3,7 @@ package grpcapp
 import (
 	"auth-service/internal/config"
 	authgrpc "auth-service/internal/web/grpc/auth"
+	"auth-service/internal/web/middleware"
 	"fmt"
 	"log/slog"
 	"net"
@@ -18,8 +19,13 @@ type App struct {
 	port       int
 }
 
-func NewApp(log *slog.Logger, authService authgrpc.Auth, cfg *config.Config, validate *validator.Validate) *App {
-	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(recovery.UnaryServerInterceptor()))
+func NewApp(log *slog.Logger, authService authgrpc.Auth, cfg *config.Config,
+	validate *validator.Validate, interceptor *middleware.AuthInterceptor) *App {
+	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		recovery.UnaryServerInterceptor(),
+		interceptor.UnaryInterceptor(),
+	),
+	)
 	authgrpc.Register(gRPCServer, authService, validate)
 	return &App{
 		log:        log,

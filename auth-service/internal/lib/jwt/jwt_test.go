@@ -26,7 +26,7 @@ func TestJWTProvider(t *testing.T) {
 		ID:   uuid.New(),
 		Name: "Test App",
 	}
-	accessToken, err := provider.NewAccessToken(user, app)
+	accessToken, err := provider.NewAccessToken(user.ID, app.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, accessToken)
 }
