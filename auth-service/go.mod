@@ -10,7 +10,6 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/stretchr/testify v1.11.1
-	github.com/tambrama/protos v0.0.5-0.20260226171653-2dd676090e57
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.48.0
 	google.golang.org/grpc v1.79.1
@@ -32,6 +31,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/tambrama/protos v0.0.5-0.20260304162846-0943b56169f9 // indirect
 	go.opentelemetry.io/otel v1.40.0 // indirect
 	go.uber.org/dig v1.19.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

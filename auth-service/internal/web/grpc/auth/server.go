@@ -16,23 +16,35 @@ import (
 
 type serverAPI struct {
 	pb.UnimplementedAuthServer
-	auth     Auth
+	auth     AuthService
+	user     UserService
+	token    TokenService
 	validate *validator.Validate
 }
 
-type Auth interface {
+type AuthService interface {
 	Login(ctx context.Context, email, password, appID string) (accessToken, refreshToken string, err error)
-	RegisterNewUser(ctx context.Context, email, password, name, surname, phoneNumber string) (userID string, err error)
-	IsAdmin(ctx context.Context, userID uuid.UUID) (isAdmin bool, err error)
-	ChangePassword(ctx context.Context, email, oldPassword, newPassword string) error
-	RestorePassword(ctx context.Context, email string) error
-	RefreshToken(ctx context.Context, refreshToken, appId string) (string, string, error)
 	Logout(ctx context.Context, token string) error
 }
 
-func Register(gRPC *grpc.Server, auth Auth, validate *validator.Validate) {
+type UserService interface {
+	RegisterNewUser(ctx context.Context, email, password, name, surname, phoneNumber string) (userID string, err error)
+	ChangePassword(ctx context.Context, email, oldPassword, newPassword string) error
+	RestorePassword(ctx context.Context, email string) error
+}
+
+type TokenService interface {
+	RefreshToken(ctx context.Context, refreshToken, appId string) (string, string, error)
+	ValidateToken(ctx context.Context, token string) (*model.CustomClaims, error)
+	IsAdmin(ctx context.Context, userID uuid.UUID) (isAdmin bool, err error)
+}
+
+func Register(gRPC *grpc.Server, auth AuthService, user UserService,
+	token TokenService, validate *validator.Validate) {
 	pb.RegisterAuthServer(gRPC, &serverAPI{
 		auth:     auth,
+		user: user,
+		token: token,
 		validate: validate,
 	})
 }
@@ -106,7 +118,7 @@ func (s *serverAPI) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.
 		}
 		return nil, status.Error(codes.InvalidArgument, "invalid input")
 	}
-	userID, err := s.auth.RegisterNewUser(ctx, input.Email, input.Password, input.Name, input.Surname, input.PhoneNumber)
+	userID, err := s.user.RegisterNewUser(ctx, input.Email, input.Password, input.Name, input.Surname, input.PhoneNumber)
 	if err != nil {
 		if errors.Is(err, model.ErrUserExists) {
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
@@ -123,7 +135,7 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *pb.IsAdminRequest) (*pb.Is
 		return nil, status.Error(codes.InvalidArgument, "user_id is required")
 	}
 
-	isAdmin, err := s.auth.IsAdmin(ctx, uuid.MustParse(req.GetUserId()))
+	isAdmin, err := s.token.IsAdmin(ctx, uuid.MustParse(req.GetUserId()))
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -141,7 +153,7 @@ func (s *serverAPI) ChangePassword(ctx context.Context, req *pb.ChangePasswordRe
 	if err := s.validate.Struct(input); err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid input")
 	}
-	err := s.auth.ChangePassword(ctx, req.GetEmail(), input.OldPassword, input.NewPassword)
+	err := s.user.ChangePassword(ctx, req.GetEmail(), input.OldPassword, input.NewPassword)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -152,7 +164,7 @@ func (s *serverAPI) RestorePassword(ctx context.Context, req *pb.RestorePassword
 	if req.Email == "" {
 		return nil, status.Error(codes.InvalidArgument, "email is required")
 	}
-	err := s.auth.RestorePassword(ctx, req.Email)
+	err := s.user.RestorePassword(ctx, req.Email)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
@@ -168,12 +180,12 @@ func (s *serverAPI) Refresh(ctx context.Context, req *pb.RefreshRequest) (*pb.Lo
 		return nil, status.Error(codes.InvalidArgument, "invalid input")
 	}
 
-	access, refresh, err := s.auth.RefreshToken(ctx, input.RefreshToken, input.AppID)
+	access, refresh, err := s.token.RefreshToken(ctx, input.RefreshToken, input.AppID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return &pb.LoginResponse{
-		AccessToken: access,
+		AccessToken:  access,
 		RefreshToken: refresh,
 	}, nil
 }
@@ -182,11 +194,28 @@ func (s *serverAPI) Logout(ctx context.Context, req *pb.LogoutRequest) (*pb.Empt
 		RefreshToken: req.GetRefreshToken(),
 	}
 	if input.RefreshToken == "" {
-		return nil,  status.Error(codes.InvalidArgument, "refresh token is required")
+		return nil, status.Error(codes.InvalidArgument, "refresh token is required")
 	}
 	if err := s.auth.Logout(ctx, input.RefreshToken); err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
-	
+
 	return &pb.Empty{}, nil
+}
+
+func (s *serverAPI) Validate(ctx context.Context, req *pb.ValidateRequest) (*pb.ValidateResponse, error) {
+	if req.GetToken() == "" {
+		return nil, status.Error(codes.InvalidArgument, "token is required")
+	}
+	claims, err :=s.token.ValidateToken(ctx, req.GetToken())
+	if err != nil {
+		if errors.Is(err, model.ErrInvalidCredentials) {
+			return nil, status.Error(codes.Unauthenticated, "invalid token")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return &pb.ValidateResponse{
+		UserId: claims.UserID.String(),
+		AppId:  claims.AppID.String(),
+	}, nil
 }

@@ -68,6 +68,8 @@ github.com/tambrama/protos v0.0.4 h1:zYcqEwcVRsOPoUXfZqVJSKgoUhMw6bmrNzxFCAbDbtw
 github.com/tambrama/protos v0.0.4/go.mod h1:ms1N+Byf5ule0c/Z+0KgzAemD2PtPeusTQvBW2GT7h4=
 github.com/tambrama/protos v0.0.5-0.20260226171653-2dd676090e57 h1:7/3N2GE6SKa6jg/siIHyQJMmcnJO8ayfHCCCeULd8yk=
 github.com/tambrama/protos v0.0.5-0.20260226171653-2dd676090e57/go.mod h1:ms1N+Byf5ule0c/Z+0KgzAemD2PtPeusTQvBW2GT7h4=
+github.com/tambrama/protos v0.0.5-0.20260304162846-0943b56169f9 h1:MR6vOBiXHDF0dT5BTadVxM7aGn99jLm1ty1kMwcYIdI=
+github.com/tambrama/protos v0.0.5-0.20260304162846-0943b56169f9/go.mod h1:ms1N+Byf5ule0c/Z+0KgzAemD2PtPeusTQvBW2GT7h4=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
 go.opentelemetry.io/otel v1.40.0 h1:oA5YeOcpRTXq6NN7frwmwFR0Cn3RhTVZvXsP4duvCms=

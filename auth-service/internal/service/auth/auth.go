@@ -239,3 +239,7 @@ func (a *auth) Logout(ctx context.Context, token string) error {
 	}
 	return nil
 }
+
+func (a *auth) ValidateToken(ctx context.Context, token string) (*model.CustomClaims, error) {
+	return a.jwtProvider.ValidateToken(token)
+}
