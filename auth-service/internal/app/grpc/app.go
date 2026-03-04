@@ -19,14 +19,14 @@ type App struct {
 	port       int
 }
 
-func NewApp(log *slog.Logger, authService authgrpc.Auth, cfg *config.Config,
-	validate *validator.Validate, interceptor *middleware.AuthInterceptor) *App {
+func NewApp(log *slog.Logger, authService authgrpc.AuthService, userService authgrpc.UserService, tokenService authgrpc.TokenService,
+	cfg *config.Config, validate *validator.Validate, interceptor *middleware.AuthInterceptor) *App {
 	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		recovery.UnaryServerInterceptor(),
 		interceptor.UnaryInterceptor(),
 	),
 	)
-	authgrpc.Register(gRPCServer, authService, validate)
+	authgrpc.Register(gRPCServer, authService, userService, tokenService, validate)
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,

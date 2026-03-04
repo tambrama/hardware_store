@@ -59,7 +59,9 @@ var Module = fx.Options(
 		fx.Annotate(auth.NewAuth, fx.As(new(middleware.AuthService))),
 		middleware.NewAuthInterceptor,
 		
-		fx.Annotate(auth.NewAuth, fx.As(new(web.Auth))),
+		fx.Annotate(auth.NewAuth, fx.As(new(web.AuthService))),
+		fx.Annotate(auth.NewAuth, fx.As(new(web.TokenService))),
+		fx.Annotate(auth.NewAuth, fx.As(new(web.UserService))),
 		grpcapp.NewApp,
 	),
 	fx.Invoke(func(lc fx.Lifecycle, storage *sql.DB, log *slog.Logger) {
