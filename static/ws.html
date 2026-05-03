@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebSocket echo client</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon.svg">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(102, 126, 234, 0.35), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(118, 75, 162, 0.35), transparent 60%),
+        linear-gradient(135deg, #0f172a 0%, #111827 100%);
+      min-height: 100vh;
+      padding: 22px;
+      display: grid;
+      place-items: center;
+    }
+    .card {
+      width: min(980px, 100%);
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 18px;
+      box-shadow: 0 25px 80px rgba(0,0,0,.35);
+      padding: 26px;
+    }
+    h2 { font-size: 1.6rem; color: #0f172a; margin-bottom: 6px; }
+    .sub { color: #475569; margin-bottom: 16px; line-height: 1.5; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 999px;
+      border: 1px solid rgba(15,23,42,.10);
+      background: rgba(15,23,42,.04);
+      color: #0f172a; font-weight: 800;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; }
+    .pill.ok .dot { background: #10b981; }
+    .pill.fail .dot { background: #ef4444; }
+    .pill.info .dot { background: #0ea5e9; }
+    code {
+      background: rgba(15,23,42,.06);
+      border: 1px solid rgba(15,23,42,.08);
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      color: #0f172a;
+    }
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(15,23,42,.12);
+      background: rgba(15,23,42,.92);
+      color: rgba(255,255,255,.96);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.05); }
+    .log {
+      margin-top: 12px;
+      background: rgba(15,23,42,.92);
+      color: rgba(255,255,255,.92);
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,.12);
+      padding: 14px;
+      height: 380px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>WebSocket echo client</h2>
+    <p class="sub">
+      <span id="protoDesc">События приходят по <strong>Socket.IO</strong> (event <code>product_update</code>).</span>
+    </p>
+
+    <div class="row">
+      <span class="pill info" id="statusPill"><span class="dot"></span><span id="statusText">Connecting…</span></span>
+      <span class="pill">
+        <span class="dot"></span>API:
+        <select id="apiSelect" style="border:1px solid rgba(15,23,42,.12); border-radius:999px; padding:6px 10px; background: rgba(255,255,255,.75); font-weight:800;">
+          <option value="v2">v2 (Python / Socket.IO)</option>
+          <option value="v1">v1 (Go / WebSocket)</option>
+        </select>
+      </span>
+      <span class="pill"><span class="dot"></span>Endpoint: <code id="endpointCode"></code></span>
+      <button class="btn" id="clearBtn" type="button">Clear log</button>
+    </div>
+
+    <div class="log" id="log"><span class="muted">waiting for events…</span></div>
+  </div>
+
+  <!-- Socket.IO библиотека (нужна только для v2) -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const apiSelect = document.getElementById("apiSelect");
+    const params = new URLSearchParams(window.location.search);
+    const api = (params.get("api") || "v2").toLowerCase() === "v1" ? "v1" : "v2";
+    apiSelect.value = api;
+
+    const logEl = document.getElementById("log");
+    const pill = document.getElementById("statusPill");
+    const statusText = document.getElementById("statusText");
+    const protoDesc = document.getElementById("protoDesc");
+    const endpointCode = document.getElementById("endpointCode");
+    document.getElementById("clearBtn").addEventListener("click", () => { logEl.textContent = ""; });
+
+    function setStatus(kind, text) {
+      pill.classList.remove("ok", "fail", "info");
+      pill.classList.add(kind);
+      statusText.textContent = text;
+    }
+
+    function append(line) {
+      if (logEl.textContent.includes("waiting for events")) logEl.textContent = "";
+      logEl.textContent += line + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Переменные для соединений
+    let socketIO = null;  // для v2
+    let ws = null;        // для v1
+
+    function disconnectAll() {
+      if (socketIO) {
+        socketIO.disconnect();
+        socketIO = null;
+      }
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+    }
+
+    function connect() {
+      disconnectAll();
+      logEl.textContent = "";
+
+      if (api === "v1") {
+        // 🟢 Go: нативный WebSocket
+        protoDesc.innerHTML = 'События приходят по <strong>нативному WebSocket</strong> (JSON).';
+        endpointCode.textContent = 'ws://localhost/ws';
+        setStatus("info", "Connecting…");
+        append(`[client] Connecting native WebSocket (endpoint=/ws)`);
+
+        ws = new WebSocket('ws://localhost/ws');
+
+        ws.onopen = () => {
+          setStatus("ok", "Connected");
+          append(`[connect] WebSocket opened`);
+          console.log("[WS] connected");
+        };
+
+        ws.onclose = (event) => {
+          setStatus("fail", "Disconnected");
+          append(`[disconnect] code=${event.code}, reason=${event.reason || 'none'}`);
+          console.log("[WS] disconnected", event);
+        };
+
+        ws.onerror = (err) => {
+          setStatus("fail", "Error");
+          append(`[error] ${err.type || 'unknown error'}`);
+          console.log("[WS] error", err);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            append(`[product_update] ${JSON.stringify(payload)}`);
+            console.log("[WS product_update]", payload);
+          } catch (e) {
+            append(`[message] raw: ${event.data}`);
+          }
+        };
+
+      } else {
+        // 🔵 Python: Socket.IO
+        protoDesc.innerHTML = 'События приходят по <strong>Socket.IO</strong> (event <code>product_update</code>).';
+        const apiPrefix = "/api/v2";
+        const path = `${apiPrefix}/socket.io`;
+        endpointCode.textContent = path;
+        setStatus("info", "Connecting…");
+        append(`[client] Connecting Socket.IO (path=${path})`);
+
+        socketIO = io({
+          path,
+          transports: ["websocket", "polling"],
+        });
+
+        socketIO.on("connect", () => {
+          setStatus("ok", "Connected");
+          append(`[connect] id=${socketIO.id}`);
+          console.log("[Socket.IO] connected", socketIO.id);
+        });
+
+        socketIO.on("disconnect", (reason) => {
+          setStatus("fail", "Disconnected");
+          append(`[disconnect] reason=${reason}`);
+          console.log("[Socket.IO] disconnected", reason);
+        });
+
+        socketIO.on("product_update", (payload) => {
+          append(`[product_update] ${JSON.stringify(payload)}`);
+          console.log("[Socket.IO product_update]", payload);
+        });
+
+        socketIO.on("connect_error", (err) => {
+          setStatus("fail", "Error / reconnecting…");
+          append(`[connect_error] ${err && err.message ? err.message : "unknown error"}`);
+        });
+      }
+    }
+
+    // Авто-подключение при загрузке
+    connect();
+
+    // Переподключение при смене версии
+    apiSelect.addEventListener("change", () => {
+      const next = new URLSearchParams(window.location.search);
+      next.set("api", apiSelect.value);
+      window.location.search = next.toString();
+      // Страница перезагрузится с новым ?api=v1 или ?api=v2
+    });
+  </script>
+</body>
+</html>

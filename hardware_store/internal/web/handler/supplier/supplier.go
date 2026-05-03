@@ -44,6 +44,8 @@ func (h *SupplierHandler) Register(c *gin.RouterGroup) {
 // @Accept json
 // @Produce json
 // @Param supplier body dto.SupplierRequest true "Данные поставщика для создания"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 201 {object} dto.SupplierResponse "Поставщик успешно создан"
 // @Failure 400 {object} dto.ValidationErrorResponse "Ошибки валидации полей или некорректный формат запроса"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера при сохранении поставщика"
@@ -85,6 +87,8 @@ func (h *SupplierHandler) Create(c *gin.Context) {
 // @Description Удаляет поставщика по уникальному идентификатору UUID
 // @Tags suppliers
 // @Param id path string true "UUID поставщика" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 204 "Поставщик успешно удалён"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Поставщик не найден"
@@ -110,6 +114,8 @@ func (h *SupplierHandler) Delete(c *gin.Context) {
 // @Tags suppliers
 // @Produce json
 // @Param id path string true "UUID поставщика" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {object} dto.SupplierResponse "Поставщик успешно получен"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Поставщик не найден"
@@ -133,6 +139,8 @@ func (h *SupplierHandler) Get(c *gin.Context) {
 // @Description Возвращает список всех поставщиков в системе
 // @Tags suppliers
 // @Produce json
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {array} dto.SupplierResponse "Список поставщиков успешно получен"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера при получении списка"
 // @Router /suppliers [get]
@@ -156,6 +164,8 @@ func (h *SupplierHandler) List(c *gin.Context) {
 // @Produce json
 // @Param id path string true "UUID поставщика" format(uuid)
 // @Param address body dto.AddressRequest true "Обновлённые данные адреса"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 "Адрес поставщика успешно обновлён"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID или ошибки валидации данных"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Поставщик не найден"

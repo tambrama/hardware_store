@@ -81,10 +81,14 @@ func (i *AuthInterceptor) UnaryInterceptor() grpc.UnaryServerInterceptor {
 
 func (i *AuthInterceptor) isPublicEndpoint(method string) bool {
 	publicEndpoints := map[string]bool{
-		"/auth.AuthService/Login":           true,
-		"/auth.AuthService/Register":        true,
-		"/auth.AuthService/RestorePassword": true,
-		"/auth.AuthService/ChangePassword":  true,
+		"/auth.Auth/Login":            true,
+		"/auth.Auth/Register":         true,
+		"/auth.Auth/RestorePassword":  true,
+		"/auth.Auth/ChangePassword":   true,
+		"/auth.Auth/Logout":           true,
+		"/auth.Auth/Refresh":          true,
+		"/auth.Auth/GetGoogleAuthURL": true,
+		"/auth.Auth/GoogleCallback":   true,
 	}
 	for endpoint := range publicEndpoints {
 		if endpoint == method {

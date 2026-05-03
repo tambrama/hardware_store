@@ -42,6 +42,8 @@ func (h *CategoryHandler) Register(r *gin.RouterGroup) {
 // @Accept json
 // @Produce json
 // @Param category body dto.CategoryRequest true "Данные категории для создания"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {object} dto.CategoryResponse "Категория успешно создана"
 // @Failure 400 {object} dto.ValidationErrorResponse "Ошибки валидации полей или некорректный формат запроса"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера при сохранении категории"
@@ -73,6 +75,8 @@ func (h *CategoryHandler) Create(c *gin.Context) {
 // @Description Удаляет категорию по уникальному идентификатору UUID
 // @Tags categories
 // @Param id path string true "UUID категории" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 204 "Категория успешно удалена"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Категория не найдена"
@@ -99,6 +103,8 @@ func (h *CategoryHandler) Delete(c *gin.Context) {
 // @Tags categories
 // @Produce json
 // @Param id path string true "UUID категории" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {object} dto.CategoryResponse "Категория успешно получена"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Категория не найдена"
@@ -124,6 +130,8 @@ func (h *CategoryHandler) Get(c *gin.Context) {
 // @Description Возвращает список всех категорий в системе
 // @Tags categories
 // @Produce json
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {array} dto.CategoryResponse "Список категорий успешно получен"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера при получении списка"
 // @Router /categories [get]
@@ -148,6 +156,8 @@ func (h *CategoryHandler) List(c *gin.Context) {
 // @Produce json
 // @Param id path string true "UUID категории" format(uuid)
 // @Param category body dto.CategoryRequest true "Обновлённые данные категории"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {object} dto.CategoryResponse "Категория успешно обновлена"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный UUID или ошибки валидации данных"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Категория не найдена"

@@ -5,6 +5,11 @@ import (
 )
 
 type Images struct {
-	ImageID uuid.UUID
-	Image   []byte
+	ImageID uuid.UUID `json:"id"`
+	// Image   []byte
+}
+
+type ImageResponse struct {
+	ImageID uuid.UUID `json:"id"`
+	ShardID int `json:"shard,omitempty"`
 }

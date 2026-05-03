@@ -43,6 +43,8 @@ func (h *ClientHandler) Register(r *gin.RouterGroup) {
 // @Accept json
 // @Produce json
 // @Param client body dto.ClientRequest true "Данные клиента"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 201 {object} dto.ClientResponse "Клиент успешно создан"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный запрос"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера"
@@ -105,6 +107,8 @@ func (h *ClientHandler) Create(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "UUID клиента" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 204 "No Content"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Клиент не найден"
@@ -134,6 +138,8 @@ func (h *ClientHandler) Delete(c *gin.Context) {
 // @Produce json
 // @Param name query string true "Имя клиента"
 // @Param surname query string true "Фамилия клиента"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {object} dto.ClientResponse "Успешно"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Клиент не найден"
@@ -164,6 +170,8 @@ func (h *ClientHandler) Get(c *gin.Context) {
 // @Produce json
 // @Param id path string true "UUID клиента" format(uuid)
 // @Param address body dto.AddressRequest true "Данные адреса для обновления"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 "Адрес успешно обновлён"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Клиент не найден"
@@ -207,6 +215,8 @@ func (h *ClientHandler) Update(c *gin.Context) {
 // @Tags clients
 // @Accept json
 // @Produce json
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {array} dto.ClientResponse "Список клиентов"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера"
 // @Router /clients [get]

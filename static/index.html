@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мое веб-приложение</title>
+    <title>No Drama Queens — Gateway</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.svg">
     <style>
         * {
             margin: 0;
@@ -12,8 +14,11 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+            background:
+                radial-gradient(1200px 600px at 20% 10%, rgba(102, 126, 234, 0.35), transparent 60%),
+                radial-gradient(900px 500px at 80% 30%, rgba(118, 75, 162, 0.35), transparent 60%),
+                linear-gradient(135deg, #0f172a 0%, #111827 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -22,37 +27,39 @@
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            padding: 60px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 24px;
+            padding: 56px 52px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
             text-align: center;
             max-width: 800px;
             width: 100%;
         }
 
         h1 {
-            color: #667eea;
-            font-size: 3em;
+            color: #0f172a;
+            font-size: 3.1em;
             margin-bottom: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #0ea5e9 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
         p {
-            color: #666;
+            color: #334155;
             font-size: 1.2em;
             margin-bottom: 40px;
             line-height: 1.6;
         }
 
         .logo {
-            width: 200px;
-            height: 200px;
+            width: 180px;
+            height: 180px;
             margin: 0 auto 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #0ea5e9 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -60,66 +67,189 @@
             color: white;
             font-size: 3em;
             font-weight: bold;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 18px 45px rgba(79, 70, 229, 0.35);
         }
 
         .links {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 15px;
             margin-top: 30px;
         }
 
         .link-btn {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: rgba(15, 23, 42, 0.92);
+            color: rgba(255, 255, 255, 0.96);
             text-decoration: none;
             border-radius: 10px;
             font-weight: bold;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 25px rgba(17, 24, 39, 0.25);
+            border: 1px solid rgba(15, 23, 42, 0.12);
+        }
+
+        .link-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1 1 auto;
+        }
+
+        .icon {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            opacity: 0.95;
+        }
+
+        .link-text {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            line-height: 1.25;
+            text-align: left;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .link-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 16px 40px rgba(17, 24, 39, 0.28);
         }
 
         .status {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
-            background: #d4edda;
-            color: #155724;
-            border-radius: 20px;
-            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px auto 18px;
+            padding: 10px 14px;
+            background: rgba(16, 185, 129, 0.10);
+            color: #065f46;
+            border-radius: 999px;
+            font-weight: 800;
+            border: 1px solid rgba(16, 185, 129, 0.22);
+        }
+
+        .status-icon {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
         }
 
         footer {
             margin-top: 40px;
-            color: #999;
+            color: #64748b;
             font-size: 0.9em;
         }
+        .credits {
+            margin-top: 6px;
+            font-size: 0.95em;
+            color: #475569;
+        }
+        .credits code {
+            background: rgba(15, 23, 42, 0.06);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+
     </style>
 </head>
 <body>
 <div class="container">
     <div class="logo">🐳</div>
     <h1>Добро пожаловать!</h1>
-    <p>Это ваше веб-приложение с полной маршрутизацией через Nginx.</p>
-
-    <div class="status">✅ Сервер работает</div>
+    <div class="status" aria-label="Service status">
+        <svg class="status-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Сервер работает</span>
+    </div>
+    <p>Главная страница проекта: ссылки на сервисы и демо realtime‑обновлений.</p>
 
     <div class="links">
-        <a href="/status" class="link-btn">📊 Статус</a>
-        <a href="/api/v1/" class="link-btn">🔌 Swagger</a>
-        <a href="/admin" class="link-btn" target="_blank">🗄️ pgAdmin</a>
+        <a href="/status" class="link-btn" data-health-url="/status" data-health-method="GET">
+            <span class="link-left">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 19V5M4 19h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M7 15l3-3 3 2 4-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="link-text">Nginx status</span>
+            </span>
+        </a>
+
+        <a href="http://localhost/swagger/" class="link-btn" target="_blank" data-health-url="/swagger/" data-health-method="GET">
+            <span class="link-left">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 7h10v10H7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M4 12h3M17 12h3M12 4v3M12 17v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="link-text">Swagger Go (v1)</span>
+            </span>
+        </a>
+
+        <a href="http://localhost/api/v2/apidocs/" class="link-btn" target="_blank" data-health-url="/api/v2/apidocs/" data-health-method="GET">
+            <span class="link-left">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M8 7c0-1.1.9-2 2-2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2V7z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M10 9h8M10 12h8M10 15h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="link-text">Swagger Python (v2)</span>
+            </span>
+        </a>
+
+        <a href="/sse.html" class="link-btn" target="_blank" data-health-url="/api/v2/realtime/stream/products" data-health-method="HEAD">
+            <span class="link-left">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 17c2.5-2.5 5.5-3.5 8-3.5S17.5 14.5 20 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M6 13c1.8-1.8 3.9-2.7 6-2.7s4.2.9 6 2.7" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+                    <path d="M8.5 9.5C9.7 8.3 10.9 8 12 8s2.3.3 3.5 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+                    <path d="M12 18.2h.01" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+                </svg>
+                <span class="link-text">SSE echo client</span>
+            </span>
+        </a>
+
+        <a href="/ws.html" class="link-btn" target="_blank" data-health-url="/api/v2/socket.io/?EIO=4&transport=polling" data-health-method="GET">
+            <span class="link-left">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 12a5 5 0 0 1 5-5h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M17 12a5 5 0 0 1-5 5h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="link-text">WebSocket echo client</span>
+            </span>
+        </a>
+
+        <a href="/admin" class="link-btn" target="_blank" data-health-url="/admin/" data-health-method="GET">
+            <span class="link-left">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M6 7c0-1.7 1.3-3 3-3h6c1.7 0 3 1.3 3 3v10c0 1.7-1.3 3-3 3H9c-1.7 0-3-1.3-3-3V7z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8.5 9h7M8.5 12h7M8.5 15h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="link-text">pgAdmin</span>
+            </span>
+        </a>
+
+        <a href="/photo.html" class="link-btn" target="_blank" data-health-url="http://localhost:8000/health" data-health-method="GET">
+            <span class="link-left">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 7h4l2-2h4l2 2h4v12H4V7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    <path d="M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span class="link-text">Photo sharding demo</span>
+            </span>
+        </a>
     </div>
 
     <footer>
         <p>&copy; 2026</p>
+        <div class="credits">made by <code>tambrama</code> &amp; <code>tablebri</code></div>
     </footer>
 </div>
 </body>

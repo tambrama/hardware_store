@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo sharding demo</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(102, 126, 234, 0.35), transparent 60%),
+        radial-gradient(900px 500px at 80% 30%, rgba(118, 75, 162, 0.35), transparent 60%),
+        linear-gradient(135deg, #0f172a 0%, #111827 100%);
+      min-height: 100vh;
+      padding: 22px;
+      display: grid;
+      place-items: center;
+    }
+    .card {
+      width: min(980px, 100%);
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 18px;
+      box-shadow: 0 25px 80px rgba(0,0,0,.35);
+      padding: 22px;
+    }
+    h2 { font-size: 1.6rem; color: #0f172a; margin-bottom: 10px; }
+    .sub { color: #475569; margin-bottom: 16px; line-height: 1.5; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    label { font-weight: 800; color: #0f172a; }
+    input[type="text"] {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(15,23,42,.15);
+      min-width: 320px;
+      background: rgba(255,255,255,.85);
+    }
+    input[type="file"] { padding: 6px 0; }
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(15,23,42,.12);
+      background: rgba(15,23,42,.92);
+      color: rgba(255,255,255,.96);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.05); }
+    code {
+      background: rgba(15,23,42,.06);
+      border: 1px solid rgba(15,23,42,.08);
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      color: #0f172a;
+    }
+    .log {
+      margin-top: 12px;
+      background: rgba(15,23,42,.92);
+      color: rgba(255,255,255,.92);
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,.12);
+      padding: 14px;
+      height: 360px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Photo sharding demo</h2>
+    <p class="sub">
+      Загружаем фото через gateway API → оно сохраняется в <code>photo-service</code>.
+      Потом смотрим <code>/images/&lt;id&gt;/debug</code>, чтобы увидеть, в какой шард (БД) оно попало.
+    </p>
+
+    <div class="row">
+      <label for="productId">product_id</label>
+      <input id="productId" type="text" placeholder="UUID товара" />
+    </div>
+    <div class="row">
+      <label for="token">token</label>
+      <input id="token" type="text" placeholder='Bearer token (можно без "Bearer ")' />
+    </div>
+    <div class="row">
+      <label for="file">file</label>
+      <input id="file" type="file" accept="image/*" />
+      <button class="btn" id="uploadBtn" type="button">Upload via /api/v2</button>
+      <button class="btn" id="uploadGoBtn" type="button">Upload via /api/v1 (Go)</button>
+      <button class="btn" id="debugBtn" type="button">Debug shard</button>
+      <button class="btn" id="clearBtn" type="button">Clear</button>
+    </div>
+
+    <div class="row">
+      <span>image_id:</span> <code id="imageId">—</code>
+      <span>shard:</span> <code id="shard">—</code>
+      <span>db:</span> <code id="db">—</code>
+    </div>
+
+    <div class="log" id="log"><span class="muted">ready…</span></div>
+  </div>
+
+  <script>
+    const logEl = document.getElementById("log");
+    const productIdEl = document.getElementById("productId");
+    const tokenEl = document.getElementById("token");
+    const fileEl = document.getElementById("file");
+    const imageIdEl = document.getElementById("imageId");
+    const shardEl = document.getElementById("shard");
+    const dbEl = document.getElementById("db");
+
+    function log(line) {
+      if (logEl.textContent.includes("ready…")) logEl.textContent = "";
+      logEl.textContent += line + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setInfo({ id, shard, database }) {
+      if (id) imageIdEl.textContent = id;
+      if (shard !== undefined && shard !== null) shardEl.textContent = String(shard);
+      if (database) dbEl.textContent = database;
+    }
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      logEl.textContent = "";
+      imageIdEl.textContent = "—";
+      shardEl.textContent = "—";
+      dbEl.textContent = "—";
+    });
+
+    document.getElementById("uploadBtn").addEventListener("click", async () => {
+      const productId = (productIdEl.value || "").trim();
+      const tokenRaw = (tokenEl.value || "").trim();
+      const f = fileEl.files && fileEl.files[0];
+      if (!productId) return log("[error] product_id is required");
+      if (!f) return log("[error] file is required");
+      if (!tokenRaw) return log("[error] token is required (Shop API защищён JWT)");
+
+      const buf = await f.arrayBuffer();
+      log(`[client] uploading ${f.name} (${buf.byteLength} bytes) to /api/v2/images?product_id=${productId}`);
+
+      const token = tokenRaw.toLowerCase().startsWith("bearer ") ? tokenRaw : ("Bearer " + tokenRaw);
+      const resp = await fetch(`/api/v2/images?product_id=${encodeURIComponent(productId)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream", "Authorization": token },
+        body: buf
+      });
+
+      const text = await resp.text();
+      log(`[api] status=${resp.status} body=${text}`);
+      if (!resp.ok) return;
+
+      try {
+        const json = JSON.parse(text);
+        setInfo({ id: json.id });
+        log(`[ok] image_id=${json.id}`);
+      } catch (e) {
+        log("[error] failed to parse JSON response");
+      }
+    });
+
+    document.getElementById("uploadGoBtn").addEventListener("click", async () => {
+      const productId = (productIdEl.value || "").trim();
+      const tokenRaw = (tokenEl.value || "").trim();
+      const f = fileEl.files && fileEl.files[0];
+      if (!productId) return log("[error] product_id is required");
+      if (!f) return log("[error] file is required");
+      if (!tokenRaw) return log("[error] token is required (Shop API защищён JWT)");
+
+      const buf = await f.arrayBuffer();
+      const url = `/api/v1/products/${encodeURIComponent(productId)}/image`;
+      log(`[client] uploading ${f.name} (${buf.byteLength} bytes) to ${url}`);
+
+      const token = tokenRaw.toLowerCase().startsWith("bearer ") ? tokenRaw : ("Bearer " + tokenRaw);
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream", "Authorization": token },
+        body: buf
+      });
+
+      const text = await resp.text();
+      log(`[api] status=${resp.status} body=${text}`);
+      if (!resp.ok) return;
+
+      try {
+        const json = JSON.parse(text);
+        const id = json.image_id || json.imageId || json.id;
+        if (!id) return log("[error] response has no image_id field");
+        setInfo({ id });
+        log(`[ok] image_id=${id}`);
+      } catch (e) {
+        log("[error] failed to parse JSON response");
+      }
+    });
+
+    document.getElementById("debugBtn").addEventListener("click", async () => {
+      const imageId = (imageIdEl.textContent || "").trim();
+      if (!imageId || imageId === "—") return log("[error] upload first (need image_id)");
+      const url = `/photo-service/images/${encodeURIComponent(imageId)}/debug`;
+      log(`[client] GET ${url}`);
+      const resp = await fetch(url);
+      const json = await resp.json().catch(() => null);
+      log(`[photo-service] status=${resp.status} body=${JSON.stringify(json)}`);
+      if (resp.ok && json) setInfo(json);
+    });
+  </script>
+</body>
+</html>
+

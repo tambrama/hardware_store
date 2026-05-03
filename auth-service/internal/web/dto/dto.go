@@ -31,5 +31,6 @@ type RefreshInput struct {
 }
 
 type LogoutInput struct {
-	RefreshToken string `json:"refresh_token"`
+	UserID string `json:"user_id"`
+	AppID string `json:"app_id"`
 }

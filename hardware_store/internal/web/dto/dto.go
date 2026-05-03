@@ -89,7 +89,7 @@ type ImageRequest struct {
 // @Description Данные изображения включая уникальный идентификатор
 // swagger:model ImageResponse
 type ImageResponse struct {
-	ImageID uuid.UUID `json:"image_id" example:"b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22"`
+	ImageID uuid.UUID `json:"id" example:"b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22"`
 }
 
 // AddressRequest запрос на создание адреса
@@ -124,4 +124,68 @@ type CategoryRequest struct {
 type CategoryResponse struct {
 	CategoryID uuid.UUID `json:"category_id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Category   string    `json:"category" example:"Холодильники"`
+}
+
+// RegisterRequest запрос на регистрацию нового пользователя
+// @Description Данные для создания новой учетной записи, включая email, пароль и контактную информацию
+// swagger:model RegisterRequest
+type RegisterRequest struct {
+	Email       string `json:"email" binding:"required,email" example:"user@example.com"`
+	Password    string `json:"password" binding:"required,min=8" example:"SecurePassword123!"`
+	Name        string `json:"name" binding:"required" example:"Alice"`
+	Surname     string `json:"surname" binding:"required" example:"Wonderland"`
+	PhoneNumber string `json:"phone_number" binding:"required" example:"+79990000000"`
+}
+
+// RegisterResponse ответ после успешной регистрации
+// @Description Содержит уникальный идентификатор созданного пользователя
+// swagger:model RegisterResponse
+type RegisterResponse struct {
+	UserID string `json:"user_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+}
+
+// LoginRequest запрос на авторизацию
+// @Description Учетные данные пользователя для входа в систему
+// swagger:model LoginRequest
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email" example:"user@example.com"`
+	Password string `json:"password" binding:"required" example:"SecurePassword123!"`
+}
+
+// LoginResponse ответ с токенами доступа
+// @Description Пары токенов (Access и Refresh) для аутентификации последующих запросов
+// swagger:model LoginResponse
+type LoginResponse struct {
+	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	RefreshToken string `json:"refresh_token" example:"dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."`
+}
+
+// RefreshRequest запрос на обновление пары токенов
+// @Description Принимает действующий Refresh токен и возвращает новую пару Access/Refresh токенов
+// swagger:model RefreshRequest
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required" example:"dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."`
+}
+
+// ChangePasswordRequest запрос на смену пароля
+// @Description Данные для изменения пароля, требующие подтверждения текущим паролем
+// swagger:model ChangePasswordRequest
+type ChangePasswordRequest struct {
+	Email       string `json:"email" binding:"required,email" example:"user@example.com"`
+	OldPassword string `json:"old_password" binding:"required" example:"SecurePassword123!"`
+	NewPassword string `json:"new_password" binding:"required" example:"NewSecurePassword456!"`
+}
+
+// RestorePasswordRequest запрос на восстановление пароля
+// @Description Email пользователя для отправки инструкций по сбросу пароля
+// swagger:model RestorePasswordRequest
+type RestorePasswordRequest struct {
+	Email string `json:"email" binding:"required,email" example:"user@example.com"`
+}
+
+//GoogleAuthURLResponse ответ с URL для авторизации через Google
+// @Description Содержит URL, на который нужно перенаправить пользователя для авторизации через Google
+// swagger:model GoogleAuthURLResponse
+type GoogleAuthURLResponse struct {
+    AuthURL string `json:"auth_url"`
 }

@@ -42,6 +42,8 @@ func (h *ImageHandler) Register(r *gin.RouterGroup) {
 // @Produce json
 // @Param id path string true "UUID продукта" format(uuid)
 // @Param image body string true "Бинарные данные изображения" binary
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 201 {object} dto.ImageResponse "Изображение успешно загружено"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID продукта или некорректные данные изображения"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера при сохранении изображения"
@@ -84,6 +86,8 @@ func (h *ImageHandler) Create(c *gin.Context) {
 // @Description Удаляет изображение по уникальному идентификатору UUID
 // @Tags images
 // @Param id path string true "UUID изображения" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 204 "Изображение успешно удалено"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID изображения"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Изображение не найдено"
@@ -111,6 +115,8 @@ func (h *ImageHandler) Delete(c *gin.Context) {
 // @Tags images
 // @Produce application/octet-stream
 // @Param id path string true "UUID изображения" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 "Бинарные данные изображения"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID изображения"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Изображение не найдено"
@@ -136,7 +142,7 @@ func (h *ImageHandler) Get(c *gin.Context) {
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Disposition", `attachment; filename="product_image.bin"`)
 
-	c.Data(http.StatusOK, "", img.Image)
+	c.Data(http.StatusOK, "", img)
 }
 
 // GetImage godoc
@@ -145,6 +151,8 @@ func (h *ImageHandler) Get(c *gin.Context) {
 // @Tags images
 // @Produce application/octet-stream
 // @Param id path string true "UUID продукта" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 "Бинарные данные изображения"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID продукта"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Изображение не найдено"
@@ -169,7 +177,7 @@ func (h *ImageHandler) GetImage(c *gin.Context) {
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("Content-Disposition", `attachment; filename="product_image.bin"`)
 
-	c.Data(http.StatusOK, "", img.Image)
+	c.Data(http.StatusOK, "", img)
 }
 
 // Update godoc
@@ -179,6 +187,8 @@ func (h *ImageHandler) GetImage(c *gin.Context) {
 // @Accept application/octet-stream
 // @Param id path string true "UUID изображения" format(uuid)
 // @Param image body string true "Бинарные данные изображения" binary
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 204 "Изображение успешно обновлено"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID или некорректные данные изображения"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Изображение не найдено"

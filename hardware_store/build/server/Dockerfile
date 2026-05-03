@@ -16,7 +16,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/app .
-COPY --from=builder /app/internal/config /app/internal/config
+COPY --from=builder /app/config /app/config
 
 EXPOSE 8081
 

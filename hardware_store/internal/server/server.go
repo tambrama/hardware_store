@@ -10,7 +10,7 @@ func NewServer(cfg *config.Config, router http.Handler) *http.Server {
 		Addr:         cfg.HTTPServer.Address,
 		Handler:      router,
 		ReadTimeout:  cfg.HTTPServer.Timeout,
-		WriteTimeout: cfg.HTTPServer.Timeout,
+		WriteTimeout: 0,
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 }

@@ -24,22 +24,6 @@ definitions:
     - country
     - street
     type: object
-  hardware_store_internal_web_dto.AddressResponse:
-    description: Данные адреса включая информацию о местоположении
-    properties:
-      address_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-      city:
-        example: Москва
-        type: string
-      country:
-        example: Россия
-        type: string
-      street:
-        example: Технопарк, 15
-        type: string
-    type: object
   hardware_store_internal_web_dto.CategoryRequest:
     description: Запрос на создание новой категории товаров
     properties:
@@ -60,6 +44,23 @@ definitions:
       category_id:
         example: 550e8400-e29b-41d4-a716-446655440000
         type: string
+    type: object
+  hardware_store_internal_web_dto.ChangePasswordRequest:
+    description: Данные для изменения пароля, требующие подтверждения текущим паролем
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      new_password:
+        example: NewSecurePassword456!
+        type: string
+      old_password:
+        example: SecurePassword123!
+        type: string
+    required:
+    - email
+    - new_password
+    - old_password
     type: object
   hardware_store_internal_web_dto.ClientRequest:
     description: Запрос на создание нового товара с категорией, ценой и информацией
@@ -110,6 +111,19 @@ definitions:
       surname:
         type: string
     type: object
+  hardware_store_internal_web_dto.ErrorResponse:
+    properties:
+      error:
+        example: validation error
+        type: string
+    type: object
+  hardware_store_internal_web_dto.GoogleAuthURLResponse:
+    description: Содержит URL, на который нужно перенаправить пользователя для авторизации
+      через Google
+    properties:
+      auth_url:
+        type: string
+    type: object
   hardware_store_internal_web_dto.ImageResponse:
     description: Данные изображения включая уникальный идентификатор
     properties:
@@ -121,6 +135,29 @@ definitions:
     properties:
       error:
         example: internal server error
+        type: string
+    type: object
+  hardware_store_internal_web_dto.LoginRequest:
+    description: Учетные данные пользователя для входа в систему
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: SecurePassword123!
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  hardware_store_internal_web_dto.LoginResponse:
+    description: Пары токенов (Access и Refresh) для аутентификации последующих запросов
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refresh_token:
+        example: dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...
         type: string
     type: object
   hardware_store_internal_web_dto.NotFoundErrorResponse:
@@ -190,6 +227,59 @@ definitions:
     - price
     - product_id
     type: object
+  hardware_store_internal_web_dto.RefreshRequest:
+    description: Принимает действующий Refresh токен и возвращает новую пару Access/Refresh
+      токенов
+    properties:
+      refresh_token:
+        example: dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  hardware_store_internal_web_dto.RegisterRequest:
+    description: Данные для создания новой учетной записи, включая email, пароль и
+      контактную информацию
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      name:
+        example: Alice
+        type: string
+      password:
+        example: SecurePassword123!
+        minLength: 8
+        type: string
+      phone_number:
+        example: "+79990000000"
+        type: string
+      surname:
+        example: Wonderland
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - phone_number
+    - surname
+    type: object
+  hardware_store_internal_web_dto.RegisterResponse:
+    description: Содержит уникальный идентификатор созданного пользователя
+    properties:
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  hardware_store_internal_web_dto.RestorePasswordRequest:
+    description: Email пользователя для отправки инструкций по сбросу пароля
+    properties:
+      email:
+        example: user@example.com
+        type: string
+    required:
+    - email
+    type: object
   hardware_store_internal_web_dto.SupplierRequest:
     description: Запрос на создание нового поставщика с контактной информацией и адресом
     properties:
@@ -237,102 +327,292 @@ definitions:
         example: invalid uuid format
         type: string
     type: object
-host: localhost:8081
 info:
   contact: {}
   description: REST API для магазина бытовой техники
   title: Hardware Store API
   version: "1.0"
 paths:
-  /addresses:
+  /auth:
     post:
       consumes:
       - application/json
-      description: Создаёт новый адрес в системе на основе переданных данных
+      description: Проверяет учетные данные и возвращает пару токенов (Access и Refresh).
       parameters:
-      - description: Данные адреса для создания
+      - description: Учетные данные (email и пароль)
         in: body
-        name: address
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/hardware_store_internal_web_dto.AddressRequest'
+          $ref: '#/definitions/hardware_store_internal_web_dto.LoginRequest'
       produces:
       - application/json
       responses:
-        "201":
-          description: Адрес успешно создан
+        "200":
+          description: Успешный вход. Токены возвращены.
           schema:
-            $ref: '#/definitions/hardware_store_internal_web_dto.AddressResponse'
+            $ref: '#/definitions/hardware_store_internal_web_dto.LoginResponse'
         "400":
-          description: Ошибки валидации полей или некорректный формат запроса
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "401":
+          description: Неверный email или пароль
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
         "500":
-          description: Внутренняя ошибка сервера при сохранении адреса
+          description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
-      summary: Создать новый адрес
+      summary: Авторизация пользователя
       tags:
-      - addresses
-  /addresses/{id}:
-    delete:
-      description: Удаляет адрес по уникальному идентификатору UUID
+      - auth
+  /auth/google/callback:
+    get:
+      description: Обрабатывает callback от Google, обменивает code на JWT-токены.
       parameters:
-      - description: UUID адреса
-        format: uuid
-        in: path
-        name: id
+      - description: Authorization code from Google
+        in: query
+        name: code
         required: true
         type: string
-      responses:
-        "204":
-          description: Адрес успешно удалён
-        "400":
-          description: Невалидный формат UUID
-          schema:
-            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
-        "404":
-          description: Адрес не найден
-          schema:
-            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
-        "500":
-          description: Внутренняя ошибка сервера при удалении
-          schema:
-            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
-      summary: Удалить адрес
-      tags:
-      - addresses
-    get:
-      description: Возвращает полные данные адреса по уникальному идентификатору
-      parameters:
-      - description: UUID адреса
-        format: uuid
-        in: path
-        name: id
+      - description: State parameter (must match)
+        in: query
+        name: state
         required: true
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Адрес успешно получен
+          description: JWT tokens
           schema:
-            $ref: '#/definitions/hardware_store_internal_web_dto.AddressResponse'
+            $ref: '#/definitions/hardware_store_internal_web_dto.LoginResponse'
         "400":
-          description: Невалидный формат UUID
+          description: Missing code or state
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "401":
+          description: Invalid code or state
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Завершение авторизации через Google
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Завершает сеанс пользователя. Для выхода достаточно наличия валидного
+        Access токена в заголовке Authorization. Сервис инвалидирует сессию для текущего
+        пользователя и приложения.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный выход. Сессия завершена.
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неверный или отсутствующий Access токен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Выход из системы (Logout)
+      tags:
+      - auth
+  /auth/oauth/google:
+    get:
+      description: Возвращает URL для редиректа пользователя на сервер авторизации
+        Google.
+      parameters:
+      - description: CSRF state parameter
+        in: query
+        name: state
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: URL для редиректа на Google
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.GoogleAuthURLResponse'
+        "400":
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Начало авторизации через Google
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Принимает refresh токен и возвращает новую пару токенов (Access
+        и Refresh).
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.RefreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Новая пара токенов
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.LoginResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "401":
+          description: Неверный или протухший refresh токен
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую учетную запись пользователя в системе. Возвращает
+        ID созданного пользователя.
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Пользователь успешно зарегистрирован
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.RegisterResponse'
+        "400":
+          description: Неверный формат запроса или данные не прошли валидацию
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "409":
+          description: Пользователь с таким email уже существует
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - auth
+  /auth/reset:
+    patch:
+      consumes:
+      - application/json
+      description: Изменяет пароль пользователя. Требует указания старого пароля для
+        подтверждения.
+      parameters:
+      - description: Email, старый и новый пароль
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пароль успешно изменен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "401":
+          description: Неверный старый пароль
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
         "404":
-          description: Адрес не найден
+          description: Пользователь не найден
           schema:
-            $ref: '#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse'
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
         "500":
-          description: Внутренняя ошибка сервера при получении адреса
+          description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
-      summary: Получить адрес
+      security:
+      - BearerAuth: []
+      summary: Смена пароля
       tags:
-      - addresses
+      - auth
+  /auth/restore:
+    post:
+      consumes:
+      - application/json
+      description: Генерирует новый пароль и отправляет его на email пользователя.
+        Используется, если пользователь забыл свой пароль.
+      parameters:
+      - description: Email пользователя для восстановления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/hardware_store_internal_web_dto.RestorePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Инструкции по восстановлению отправлены на email
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный формат email
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.ErrorResponse'
+        "500":
+          description: Ошибка отправки письма или генерации пароля
+          schema:
+            $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      summary: Восстановление пароля
+      tags:
+      - auth
   /categories:
     get:
       description: Возвращает список всех категорий в системе
@@ -349,6 +629,9 @@ paths:
           description: Внутренняя ошибка сервера при получении списка
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить список категорий
       tags:
       - categories
@@ -378,6 +661,9 @@ paths:
           description: Внутренняя ошибка сервера при сохранении категории
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Создать новую категорию
       tags:
       - categories
@@ -406,6 +692,9 @@ paths:
           description: Внутренняя ошибка сервера при удалении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Удалить категорию
       tags:
       - categories
@@ -437,6 +726,9 @@ paths:
           description: Внутренняя ошибка сервера при получении категории
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить категорию
       tags:
       - categories
@@ -476,6 +768,9 @@ paths:
           description: Внутренняя ошибка сервера при обновлении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Обновить категорию
       tags:
       - categories
@@ -497,6 +792,9 @@ paths:
           description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить список всех клиентов
       tags:
       - clients
@@ -526,6 +824,9 @@ paths:
           description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Создание клиента
       tags:
       - clients
@@ -558,6 +859,9 @@ paths:
           description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Удаление клиента
       tags:
       - clients
@@ -595,6 +899,9 @@ paths:
           description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Обновить клиента
       tags:
       - clients
@@ -633,6 +940,9 @@ paths:
           description: Внутренняя ошибка сервера
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить клиента
       tags:
       - clients
@@ -661,6 +971,9 @@ paths:
           description: Внутренняя ошибка сервера при удалении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Удалить изображение
       tags:
       - images
@@ -690,6 +1003,9 @@ paths:
           description: Внутренняя ошибка сервера при получении изображения
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить изображение по ID
       tags:
       - images
@@ -725,6 +1041,9 @@ paths:
           description: Внутренняя ошибка сервера при обновлении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Обновить изображение
       tags:
       - images
@@ -744,6 +1063,9 @@ paths:
           description: Внутренняя ошибка сервера при получении списка
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить список продуктов
       tags:
       - products
@@ -773,6 +1095,9 @@ paths:
           description: Внутренняя ошибка сервера при сохранении продукта
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Создать новый продукт
       tags:
       - products
@@ -801,6 +1126,9 @@ paths:
           description: Внутренняя ошибка сервера при удалении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Удалить продукт
       tags:
       - products
@@ -832,6 +1160,9 @@ paths:
           description: Внутренняя ошибка сервера при получении продукта
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить продукт
       tags:
       - products
@@ -862,6 +1193,9 @@ paths:
           description: Внутренняя ошибка сервера при получении изображения
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить изображение продукта
       tags:
       - images
@@ -897,6 +1231,9 @@ paths:
           description: Внутренняя ошибка сервера при сохранении изображения
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Загрузить изображение для продукта
       tags:
       - images
@@ -939,6 +1276,9 @@ paths:
           description: Внутренняя ошибка сервера при обновлении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Обновить количество товара на складе
       tags:
       - products
@@ -958,6 +1298,9 @@ paths:
           description: Внутренняя ошибка сервера при получении списка
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить список поставщиков
       tags:
       - suppliers
@@ -987,6 +1330,9 @@ paths:
           description: Внутренняя ошибка сервера при сохранении поставщика
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Создать нового поставщика
       tags:
       - suppliers
@@ -1015,6 +1361,9 @@ paths:
           description: Внутренняя ошибка сервера при удалении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Удалить поставщика
       tags:
       - suppliers
@@ -1046,6 +1395,9 @@ paths:
           description: Внутренняя ошибка сервера при получении поставщика
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Получить поставщика
       tags:
       - suppliers
@@ -1083,7 +1435,27 @@ paths:
           description: Внутренняя ошибка сервера при обновлении
           schema:
             $ref: '#/definitions/hardware_store_internal_web_dto.InternalErrorResponse'
+      security:
+      - BearerAuth: []
+      - OAuth2: []
       summary: Обновить адрес поставщика
       tags:
       - suppliers
+security:
+- BearerAuth: []
+- OAuth2: []
+securityDefinitions:
+  BearerAuth:
+    description: 'Введите токен в формате: "Bearer <ваш_токен>"'
+    in: header
+    name: Authorization
+    type: apiKey
+  OAuth2:
+    authorizationUrl: https://accounts.google.com/o/oauth2/v2/auth
+    flow: accessCode
+    scopes:
+      email: Просмотр вашего email
+      profile: Просмотр вашего профиля
+    tokenUrl: https://oauth2.googleapis.com/token
+    type: oauth2
 swagger: "2.0"

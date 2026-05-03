@@ -49,6 +49,7 @@ var Module = fx.Options(
 		NewValidator,
 
 		sqlite.NewSQLiteDB,
+		auth.NewOAuthService,
 		fx.Annotate(appstorage.NewStorage, fx.As(new(auth.AppStorage))),
 		fx.Annotate(userstorage.NewStorage, fx.As(new(auth.UserStorage))),
 		fx.Annotate(jwtstorage.NewStorage, fx.As(new(auth.JWTStorage))),
@@ -58,7 +59,8 @@ var Module = fx.Options(
 		fx.Annotate(jwt.NewJWTProvider, fx.As(new(middleware.JWTProvider))),
 		fx.Annotate(auth.NewAuth, fx.As(new(middleware.AuthService))),
 		middleware.NewAuthInterceptor,
-		
+
+		fx.Annotate(auth.NewOAuthService, fx.As(new(web.OAuthService))),
 		fx.Annotate(auth.NewAuth, fx.As(new(web.AuthService))),
 		fx.Annotate(auth.NewAuth, fx.As(new(web.TokenService))),
 		fx.Annotate(auth.NewAuth, fx.As(new(web.UserService))),

@@ -1,6 +1,18 @@
 env: "local"
-database_url: "postgres://postgres:password@db:5432/hardwarestore?sslmode=disable"
-htp_server:
-  address: "localhost:8081"
+database_url: "postgres://postgres:postgres@db-hardwarestore:5432/hardwarestore?sslmode=disable"
+http_server: 
+  address: "0.0.0.0:8081"
   timeout: 4s
   idle_timeout: 30s
+clients:
+  sso:
+    address: "auth-service:9090"
+    timeout: 5s
+    retriers_count: 3
+app_id: "e09906ec-980c-4dd0-9251-c87105817550"
+
+kafka_brokers: ["kafka:9092"]
+kafka_topic: "product-updates"
+
+redis_host: "redis"
+redis_port: "6379"

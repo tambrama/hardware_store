@@ -13,12 +13,20 @@ type Config struct {
 	StoragePath  string        `yaml:"storage_path" env-required:"./storage/auth.db"`
 	TokenTTL     time.Duration `yaml:"token_ttl" env-default:"24h"`
 	GRPC         GRPCConfig    `yaml:"grpc"`
-	JWTSecretKey string        `yaml:"jwt_secret_key" env-required:"true"`
+	JWTSecretKey string        `yaml:"jwt_secret_key" env:"APP_SECRET" env-required:"true"`
+	OAuth  OAuthConfig   `yaml:"oauth"`
 }
 
 type GRPCConfig struct {
 	Port    int           `yaml:"port" env-default:"9090"`
 	Timeout time.Duration `yaml:"timeout" env-default:"40s"`
+}
+
+type OAuthConfig struct {
+	ClientID     string        `env:"GOOGLE_CLIENT_ID"`
+	ClientSecret string        `env:"GOOGLE_CLIENT_SECRET"`	
+	RedirectURL  string        `env:"GOOGLE_REDIRECT_URI"`
+	JwtExpiration time.Duration `env:"OAUTH_JWT_EXPIRATION" env-default:"24h"`
 }
 
 func NewConfig() *Config {

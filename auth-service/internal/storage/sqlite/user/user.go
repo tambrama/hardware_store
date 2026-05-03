@@ -21,14 +21,23 @@ func NewStorage(db *sql.DB) *storage {
 }
 func (s *storage) SaveUser(ctx context.Context, user model.Users) error {
 	const op = "storage.sqlite.SaveUser"
-	query := `INSERT INTO users (id, mail, hash_password, name, surname, phone_number) VALUES (?, ?, ?, ?, ?, ?)`
+	
+	query := `INSERT INTO users (id, google_id, mail, hash_password, name, surname, phone_number) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?)`
 
-	_, err := s.db.ExecContext(ctx, query, user.ID.String(), user.Mail, user.Password, user.Name, user.Surname, user.PhoneNumber)
+	_, err := s.db.ExecContext(ctx, query, 
+		user.ID.String(), 
+		user.GoogleID, 
+		user.Mail, 
+		user.Password, 
+		user.Name, 
+		user.Surname, 
+		user.PhoneNumber,
+	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 			return fmt.Errorf("%s: %w", op, model.ErrUserExists)
 		}
-
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	return nil
@@ -62,7 +71,36 @@ func (s *storage) GetUserByID(ctx context.Context, userID uuid.UUID) (model.User
 	}
 	return user, err
 }
-
+func (s *storage) GetUserByGoogleID(ctx context.Context, googleID string) (model.Users, error){ 
+	const op = "storage.sqlite.GetUserByGoogleID"
+	var user model.Users
+	query := `SELECT id, google_id,mail, hash_password, name, surname, phone_number FROM users WHERE google_id = ?`
+	row := s.db.QueryRowContext(ctx, query, googleID)
+	err := row.Scan(&user.ID, &user.GoogleID, &user.Mail, &user.Password, &user.Name, &user.Surname, &user.PhoneNumber)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return user, fmt.Errorf("%s: %w", op, model.ErrUserNotFound)
+		}
+		return user, fmt.Errorf("%s: %w", op, err)
+	}
+	return user, err
+}
+func (s *storage)UpdateUserGoogleID(ctx context.Context, userID uuid.UUID, googleID string) error {
+const op = "storage.sqlite.UpdateUserGoogleID"
+	query := `UPDATE users SET google_id = ? WHERE id = ?`
+	result, err := s.db.ExecContext(ctx, query, googleID, userID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: %w", op, model.ErrUserNotFound)
+	}
+	return nil
+	}
 func (s *storage) UpdateUserPassword(ctx context.Context, email string, newPassword []byte) error {
 	const op = "storage.sqlite.UpdateUserPassword"
 	query := `UPDATE users SET hash_password = ? WHERE mail = ?`

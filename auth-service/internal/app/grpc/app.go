@@ -20,13 +20,13 @@ type App struct {
 }
 
 func NewApp(log *slog.Logger, authService authgrpc.AuthService, userService authgrpc.UserService, tokenService authgrpc.TokenService,
-	cfg *config.Config, validate *validator.Validate, interceptor *middleware.AuthInterceptor) *App {
+	cfg *config.Config, validate *validator.Validate, oauth authgrpc.OAuthService, interceptor *middleware.AuthInterceptor) *App {
 	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		recovery.UnaryServerInterceptor(),
 		interceptor.UnaryInterceptor(),
 	),
 	)
-	authgrpc.Register(gRPCServer, authService, userService, tokenService, validate)
+	authgrpc.Register(gRPCServer, authService, userService, tokenService, validate, oauth)
 	return &App{
 		log:        log,
 		gRPCServer: gRPCServer,

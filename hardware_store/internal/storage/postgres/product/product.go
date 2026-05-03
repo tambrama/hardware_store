@@ -62,6 +62,27 @@ func (r *productRepository) UpdateBalance(ctx context.Context, id uuid.UUID, col
 	return mapper.ProductFromDTO(dto), nil
 }
 
+func (r *productRepository) UpdateProduct(ctx context.Context, id string, newCol int, newPrice float64) error {
+	query := `UPDATE product 
+	SET price = $1, available_stock = $2
+	WHERE product_id = $3`
+
+	ct, err := r.pool.Exec(ctx, query, newPrice, newCol, id)
+	if err != nil {
+		return fmt.Errorf("ошибка обновления товара: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return storage.ErrProductNotFound
+	}
+
+	r.log.Debug("product updated in db",
+		slog.String("product_id", id),
+		slog.Float64("price", newPrice),
+		slog.Int("stock", newCol),
+	)
+	return  nil
+}
+
 func (r *productRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM product 
 	WHERE product_id = $1`

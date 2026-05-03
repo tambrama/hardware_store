@@ -1,7 +1,6 @@
 env: "local"
 storage_path: "./storage/auth.db"
 token_ttl: 24h
-jwt_secret_key: "your_secret_key_here"
 grpc:
   port: 9090
   timeout: 40s

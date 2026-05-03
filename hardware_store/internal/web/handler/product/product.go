@@ -46,6 +46,8 @@ func (h *ProductHandler) Register(r *gin.RouterGroup) {
 // @Accept json
 // @Produce json
 // @Param product body dto.ProductRequest true "Данные продукта для создания"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 201 {object} dto.ProductResponse "Продукт успешно создан"
 // @Failure 400 {object} dto.ValidationErrorResponse "Ошибки валидации полей или некорректный формат запроса"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера при сохранении продукта"
@@ -105,6 +107,8 @@ func (h *ProductHandler) Create(c *gin.Context) {
 // @Description Удаляет продукт по уникальному идентификатору UUID
 // @Tags products
 // @Param id path string true "UUID продукта" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 204 "Продукт успешно удалён"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Продукт не найден"
@@ -133,6 +137,8 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 // @Tags products
 // @Produce json
 // @Param id path string true "UUID продукта" format(uuid)
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {object} dto.ProductResponse "Продукт успешно получен"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат UUID"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Продукт не найден"
@@ -163,6 +169,8 @@ func (h *ProductHandler) Get(c *gin.Context) {
 // @Produce json
 // @Param id path string true "UUID продукта" format(uuid)
 // @Param stock body dto.UpdateStockCountRequest true "Новое количество товара"
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {object} dto.ProductResponse "Количество товара успешно обновлено"
 // @Failure 400 {object} dto.ValidationErrorResponse "Невалидный формат запроса, отрицательное количество или недостаточный остаток"
 // @Failure 404 {object} dto.NotFoundErrorResponse "Продукт не найден"
@@ -206,6 +214,8 @@ func (h *ProductHandler) Update(c *gin.Context) {
 // @Description Возвращает список всех продуктов в системе
 // @Tags products
 // @Produce json
+// @Security     BearerAuth
+// @Security     OAuth2 
 // @Success 200 {array} dto.ProductResponse "Список продуктов успешно получен"
 // @Failure 500 {object} dto.InternalErrorResponse "Внутренняя ошибка сервера при получении списка"
 // @Router /products [get]

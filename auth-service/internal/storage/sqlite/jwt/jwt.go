@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type storage struct {
@@ -48,7 +46,7 @@ func (s *storage) GetSession(ctx context.Context, tokenHash string) (model.Sessi
 	return session, nil
 }
 
-func (s *storage) DeleteSession(ctx context.Context, userID uuid.UUID, appID string) error {
+func (s *storage) DeleteSession(ctx context.Context, userID, appID string) error {
 	const op = "storage.sqlite.DeleteSession"
 	query := `DELETE FROM refresh_tokens WHERE user_id = ? AND app_id = ?`
 	result, err := s.db.ExecContext(ctx, query, userID, appID)
@@ -60,7 +58,7 @@ func (s *storage) DeleteSession(ctx context.Context, userID uuid.UUID, appID str
 		return fmt.Errorf("%s: %w", op, err)
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("%s: no refresh token found for user ID %s and app ID %s", op, userID.String(), appID)
+		return fmt.Errorf("%s: no refresh token found for user ID %s and app ID %s", op, userID, appID)
 	}
 	return nil
 }

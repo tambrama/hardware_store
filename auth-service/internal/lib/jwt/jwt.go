@@ -52,7 +52,8 @@ func (p *iwtProvider) NewRefreshToken(user, app uuid.UUID) (string, error) {
 }
 
 func (p *iwtProvider) ValidateToken(tokenString string) (*model.CustomClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+	claims := &model.CustomClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
@@ -61,8 +62,7 @@ func (p *iwtProvider) ValidateToken(tokenString string) (*model.CustomClaims, er
 	if err != nil {
 		return nil, err
 	}
-	claims, ok := token.Claims.(*model.CustomClaims)
-	if !ok || !token.Valid {
+	if !token.Valid {
 		return nil, model.ErrInvalidToken
 	}
 	return claims, nil

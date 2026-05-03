@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package = "auth_service/internal/pb;pb";
+
+service Auth {
+   rpc Register (RegisterRequest) returns (RegisterResponse);
+   rpc Login (LoginRequest) returns (LoginResponse);
+   rpc Refresh (RefreshRequest) returns (LoginResponse);
+   rpc Validate (ValidateRequest) returns (ValidateResponse); 
+   rpc Logout (LogoutRequest) returns (Empty);
+   rpc IsAdmin (IsAdminRequest) returns (IsAdminResponse);
+   rpc ChangePassword (ChangePasswordRequest) returns (Empty);
+   rpc RestorePassword (RestorePasswordRequest) returns (Empty);
+   rpc GetGoogleAuthURL(GetGoogleAuthURLRequest) returns (GetGoogleAuthURLResponse);
+   rpc GoogleCallback(GoogleCallbackRequest) returns (LoginResponse);
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string name = 3;
+  string surname = 4;
+  string phone_number = 5;
+
+}
+
+message RegisterResponse {
+  string user_id = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  string app_id = 3;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message IsAdminRequest {
+  string user_id = 1;
+}
+
+message IsAdminResponse {
+  bool is_admin = 1;
+}
+
+message ChangePasswordRequest {
+  string email = 1; 
+  string old_password = 2;
+  string new_password = 3;
+}
+
+message RestorePasswordRequest {
+  string email = 1;
+}
+
+message Empty {}
+
+message RefreshRequest {
+  string refresh_token = 1;
+  string app_id = 2; 
+}
+
+message LogoutRequest {
+  string user_id = 1;
+  string app_id  = 2;
+}
+
+message ValidateRequest {
+  string token = 1;
+}
+
+message ValidateResponse {
+  string user_id = 1;
+  string app_id = 2;
+}
+
+message GetGoogleAuthURLRequest {
+  string state = 1; 
+}
+
+message GetGoogleAuthURLResponse {
+  string auth_url = 1; 
+}
+
+message GoogleCallbackRequest {
+  string code = 1;   
+  string state = 2;
+  string app_id = 3; 
+}

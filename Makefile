@@ -1,26 +1,4 @@
-MAIN=cmd/app/main.go
-BUILD_DIR =build
-O_FILE=server
-
-.PHONY: all build run clear
-
-all: docker-up
-
-build: 
-	@mkdir -p $(BUILD_DIR)
-	go build -o $(BUILD_DIR)/$(O_FILE) $(MAIN)
-
-run: build
-	./$(BUILD_DIR)/$(O_FILE)
-
-clean:
-	rm -rf $(BUILD_DIR)
-
-fmt:
-	go fmt ./...
-
-update_mod:
-	go mod tidy
+.PHONY: docker-up docker-down docker-rebuild docker-logs
 
 docker-up:
 	docker-compose -f docker-compose.yml up --build -d
@@ -33,10 +11,4 @@ docker-rebuild:
 	docker-compose -f docker-compose.yml up --build -d
 
 docker-logs:
-	docker-compose -f docker-compose.yml logs -f app
-
-docs:
-	swag init --parseDependency --parseInternal --generalInfo cmd/app/main.go --output ./docs
-
-generate:
-	cd protos && protoc -I . ./proto/sso/sso.proto --go_out=./gen/go/ --go_opt=paths=source_relative --go-grpc_out=./gen/go --go-grpc_opt=paths=source_relative
+	docker-compose -f docker-compose.yml logs -f backend

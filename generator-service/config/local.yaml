@@ -1,0 +1,18 @@
+env: local
+
+hardware_db: "postgres://postgres:postgres@host.docker.internal:5433/hardwarestore?sslmode=disable"
+shop_db: "postgresql://postgres:postgres@db-shopapi:5432/shopapi?sslmode=disable"
+
+kafka_brokers:
+  - "host.docker.internal:9093"
+
+kafka_topic: "product-updates"
+
+# Генерировать событие каждые 10 секунд
+generator_interval: "10s"
+
+# Менять цену на ±10%
+price_change_percent: 10.0
+
+# Менять количество на ±15 единиц
+stock_change_amount: 15

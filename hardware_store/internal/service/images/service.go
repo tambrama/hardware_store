@@ -3,9 +3,11 @@ package images
 import (
 	"context"
 	"fmt"
+	"hardware_store/internal/clients/photo"
 	"hardware_store/internal/logger"
 	"hardware_store/internal/model/images"
 	"hardware_store/internal/model/tx"
+	"hardware_store/internal/storage/cache"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -21,63 +23,95 @@ type ImagesRepository interface {
 }
 
 type imageService struct {
-	repo   ImagesRepository
-	tx     tx.Manager
-	logger *slog.Logger
+	repo        ImagesRepository
+	clientPhoto *photo.PhotoServiceClient
+	cache       *cache.ImageCache
+	tx          tx.Manager
+	logger      *slog.Logger
 }
 
-func NewImageService(repo ImagesRepository, tx tx.Manager, logger *slog.Logger) *imageService {
+func NewImageService(repo ImagesRepository, clientPhoto *photo.PhotoServiceClient, cache *cache.ImageCache, tx tx.Manager, logger *slog.Logger) *imageService {
 	return &imageService{
-		repo:   repo,
-		tx:     tx,
-		logger: logger,
+		repo:        repo,
+		clientPhoto: clientPhoto,
+		cache:       cache,
+		tx:          tx,
+		logger:      logger,
 	}
 }
 
 func (s *imageService) CreateImage(ctx context.Context, image []byte, product uuid.UUID) (uuid.UUID, error) {
-	imgID := uuid.New()
-	s.logger.Info("Creating image",
-		slog.String("image_id", imgID.String()),
-		slog.String("product_id", product.String()),
-		slog.Int("image_size", len(image)),
-	)
-	err := s.tx.WithinTransaction(ctx, func(ctx context.Context) error {
-		if err := s.repo.Insert(ctx, images.Images{ImageID: imgID, Image: image}); err != nil {
-			s.logger.Error("Failed to insert image",
-				logger.Err(err),
-				slog.String("image_id", imgID.String()),
-			)
-			return fmt.Errorf("failed to insert image: %w", err)
-		}
-		s.logger.Info("Image inserted successfully",
-			slog.String("image_id", imgID.String()),
-		)
-		err := s.repo.Attach(ctx, imgID, product)
-		if err != nil {
-			fmt.Printf("Attach error: %v\n", err)
-			return err
-		}
-		return nil
-	})
+	const op = "images.CreateImage"
+
+	imgResp, err := s.clientPhoto.CreatePhoto(ctx, image)
 	if err != nil {
-		return uuid.Nil, err
+		s.logger.Error("Failed to create photo via PhotoServiceClient",
+			logger.Err(err),
+			slog.String("product_id", product.String()),
+		)
+		return uuid.Nil, fmt.Errorf("%s: create in photo-service: %w", op, err)
 	}
 
-	return imgID, nil
+	err = s.repo.Attach(ctx, imgResp.ImageID, product)
+	if err != nil {
+		fmt.Printf("Attach error: %v\n", err)
+		return uuid.Nil, fmt.Errorf("%s: attach to product: %w", op, err)
+	}
+
+	s.cache.Set(ctx, product, images.Images{ImageID: imgResp.ImageID})
+
+	return imgResp.ImageID, nil
 }
 
 func (s *imageService) UpdateImage(ctx context.Context, id uuid.UUID, image []byte) error {
-	return s.repo.Update(ctx, images.Images{ImageID: id, Image: image})
+	const op = "images.UpdateImage"
+
+	_, err := s.clientPhoto.UpdatePhoto(ctx, image, id.String())
+	if err != nil {
+		return fmt.Errorf("%s: update photo: %w", op, err)
+	}
+	s.cache.Delete(ctx, id)
+	return nil
 }
 
 func (s *imageService) DeleteImage(ctx context.Context, id uuid.UUID) error {
-	return s.repo.Delete(ctx, id)
+	const op = "images.DeleteImage"
+	err := s.clientPhoto.DeletePhoto(ctx, id.String())
+	if err != nil {
+		return fmt.Errorf("%s: delete photo: %w", op, err)
+	}
+
+	if err := s.repo.Delete(ctx, id); err != nil {
+		return fmt.Errorf("%s: detach from product: %w", op, err)
+	}
+
+	s.cache.Delete(ctx, id)
+
+	return nil
 }
 
-func (s *imageService) GetImage(ctx context.Context, id uuid.UUID) (images.Images, error) {
-	return s.repo.GetById(ctx, id)
+func (s *imageService) GetImage(ctx context.Context, id uuid.UUID) ([]byte, error) {
+	const op = "images.GetImage"
+
+	img, err := s.clientPhoto.GetPhoto(ctx, id.String())
+	if err != nil {
+		return []byte{}, fmt.Errorf("%s: update in photo-service: %w", op, err)
+	}
+	return img, nil
 }
 
-func (s *imageService) GetImageByProduct(ctx context.Context, product uuid.UUID) (images.Images, error) {
-	return s.repo.GetByProduct(ctx, product)
+func (s *imageService) GetImageByProduct(ctx context.Context, product uuid.UUID) ([]byte, error) {
+	const op = "images.GetImageByProduct"
+
+	cache, err := s.cache.Get(ctx, product)
+	if err == nil {
+		return s.GetImage(ctx, cache.ImageID)
+	}
+	
+	img, err := s.clientPhoto.GetPhoto(ctx, cache.ImageID.String())
+	if err != nil {
+		return []byte{}, fmt.Errorf("%s: update in photo-service: %w", op, err)
+	}
+
+	return img, nil
 }

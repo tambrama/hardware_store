@@ -15,9 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/addresses": {
+        "/auth": {
             "post": {
-                "description": "Создаёт новый адрес в системе на основе переданных данных",
+                "description": "Проверяет учетные данные и возвращает пару токенов (Access и Refresh).",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,35 +25,41 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "addresses"
+                    "auth"
                 ],
-                "summary": "Создать новый адрес",
+                "summary": "Авторизация пользователя",
                 "parameters": [
                     {
-                        "description": "Данные адреса для создания",
-                        "name": "address",
+                        "description": "Учетные данные (email и пароль)",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/hardware_store_internal_web_dto.AddressRequest"
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.LoginRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Адрес успешно создан",
+                    "200": {
+                        "description": "Успешный вход. Токены возвращены.",
                         "schema": {
-                            "$ref": "#/definitions/hardware_store_internal_web_dto.AddressResponse"
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.LoginResponse"
                         }
                     },
                     "400": {
-                        "description": "Ошибки валидации полей или некорректный формат запроса",
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный email или пароль",
                         "schema": {
                             "$ref": "#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка сервера при сохранении адреса",
+                        "description": "Внутренняя ошибка сервера",
                         "schema": {
                             "$ref": "#/definitions/hardware_store_internal_web_dto.InternalErrorResponse"
                         }
@@ -61,87 +67,367 @@ const docTemplate = `{
                 }
             }
         },
-        "/addresses/{id}": {
+        "/auth/google/callback": {
             "get": {
-                "description": "Возвращает полные данные адреса по уникальному идентификатору",
+                "description": "Обрабатывает callback от Google, обменивает code на JWT-токены.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "addresses"
+                    "auth"
                 ],
-                "summary": "Получить адрес",
+                "summary": "Завершение авторизации через Google",
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "UUID адреса",
-                        "name": "id",
-                        "in": "path",
+                        "description": "Authorization code from Google",
+                        "name": "code",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "State parameter (must match)",
+                        "name": "state",
+                        "in": "query",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Адрес успешно получен",
+                        "description": "JWT tokens",
                         "schema": {
-                            "$ref": "#/definitions/hardware_store_internal_web_dto.AddressResponse"
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.LoginResponse"
                         }
                     },
                     "400": {
-                        "description": "Невалидный формат UUID",
+                        "description": "Missing code or state",
                         "schema": {
-                            "$ref": "#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse"
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
                         }
                     },
-                    "404": {
-                        "description": "Адрес не найден",
+                    "401": {
+                        "description": "Invalid code or state",
                         "schema": {
-                            "$ref": "#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse"
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка сервера при получении адреса",
+                        "description": "Internal error",
                         "schema": {
                             "$ref": "#/definitions/hardware_store_internal_web_dto.InternalErrorResponse"
                         }
                     }
                 }
-            },
-            "delete": {
-                "description": "Удаляет адрес по уникальному идентификатору UUID",
-                "tags": [
-                    "addresses"
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
-                "summary": "Удалить адрес",
+                "description": "Завершает сеанс пользователя. Для выхода достаточно наличия валидного Access токена в заголовке Authorization. Сервис инвалидирует сессию для текущего пользователя и приложения.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Выход из системы (Logout)",
+                "responses": {
+                    "200": {
+                        "description": "Успешный выход. Сессия завершена.",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный или отсутствующий Access токен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/oauth/google": {
+            "get": {
+                "description": "Возвращает URL для редиректа пользователя на сервер авторизации Google.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Начало авторизации через Google",
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "UUID адреса",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "description": "CSRF state parameter",
+                        "name": "state",
+                        "in": "query"
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "Адрес успешно удалён"
+                    "200": {
+                        "description": "URL для редиректа на Google",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.GoogleAuthURLResponse"
+                        }
                     },
                     "400": {
-                        "description": "Невалидный формат UUID",
+                        "description": "Неверный запрос",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Принимает refresh токен и возвращает новую пару токенов (Access и Refresh).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Обновление токенов",
+                "parameters": [
+                    {
+                        "description": "Refresh токен",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Новая пара токенов",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный или протухший refresh токен",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Создает новую учетную запись пользователя в системе. Возвращает ID созданного пользователя.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Регистрация нового пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные для регистрации",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Пользователь успешно зарегистрирован",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.RegisterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса или данные не прошли валидацию",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Пользователь с таким email уже существует",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/reset": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Изменяет пароль пользователя. Требует указания старого пароля для подтверждения.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Смена пароля",
+                "parameters": [
+                    {
+                        "description": "Email, старый и новый пароль",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пароль успешно изменен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный старый пароль",
                         "schema": {
                             "$ref": "#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Адрес не найден",
+                        "description": "Пользователь не найден",
                         "schema": {
-                            "$ref": "#/definitions/hardware_store_internal_web_dto.NotFoundErrorResponse"
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Внутренняя ошибка сервера при удалении",
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.InternalErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/restore": {
+            "post": {
+                "description": "Генерирует новый пароль и отправляет его на email пользователя. Используется, если пользователь забыл свой пароль.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Восстановление пароля",
+                "parameters": [
+                    {
+                        "description": "Email пользователя для восстановления",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.RestorePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Инструкции по восстановлению отправлены на email",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат email",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ValidationErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/hardware_store_internal_web_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка отправки письма или генерации пароля",
                         "schema": {
                             "$ref": "#/definitions/hardware_store_internal_web_dto.InternalErrorResponse"
                         }
@@ -151,6 +437,14 @@ const docTemplate = `{
         },
         "/categories": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает список всех категорий в системе",
                 "produces": [
                     "application/json"
@@ -178,6 +472,14 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Создаёт новую категорию в системе на основе переданных данных",
                 "consumes": [
                     "application/json"
@@ -224,6 +526,14 @@ const docTemplate = `{
         },
         "/categories/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает полные данные категории по уникальному идентификатору",
                 "produces": [
                     "application/json"
@@ -270,6 +580,14 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Обновляет данные категории по уникальному идентификатору",
                 "consumes": [
                     "application/json"
@@ -328,6 +646,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Удаляет категорию по уникальному идентификатору UUID",
                 "tags": [
                     "categories"
@@ -370,6 +696,14 @@ const docTemplate = `{
         },
         "/clients": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает список всех клиентов в системе",
                 "consumes": [
                     "application/json"
@@ -400,6 +734,14 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Создаёт нового клиента вместе с адресом",
                 "consumes": [
                     "application/json"
@@ -446,6 +788,14 @@ const docTemplate = `{
         },
         "/clients/search": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает информацию о клиенте по имени и фамилии",
                 "consumes": [
                     "application/json"
@@ -503,6 +853,14 @@ const docTemplate = `{
         },
         "/clients/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Обновляет адрес клиента по его уникальному идентификатору",
                 "consumes": [
                     "application/json"
@@ -558,6 +916,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Удаляет клиента по его уникальному идентификатору",
                 "consumes": [
                     "application/json"
@@ -606,6 +972,14 @@ const docTemplate = `{
         },
         "/images/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает бинарные данные изображения по уникальному идентификатору",
                 "produces": [
                     "application/octet-stream"
@@ -649,6 +1023,14 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Обновляет существующее изображение новыми бинарными данными",
                 "consumes": [
                     "application/octet-stream"
@@ -701,6 +1083,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Удаляет изображение по уникальному идентификатору UUID",
                 "tags": [
                     "images"
@@ -743,6 +1133,14 @@ const docTemplate = `{
         },
         "/products": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает список всех продуктов в системе",
                 "produces": [
                     "application/json"
@@ -770,6 +1168,14 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Создаёт новый продукт в системе на основе переданных данных",
                 "consumes": [
                     "application/json"
@@ -816,6 +1222,14 @@ const docTemplate = `{
         },
         "/products/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает полные данные продукта по уникальному идентификатору",
                 "produces": [
                     "application/json"
@@ -862,6 +1276,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Удаляет продукт по уникальному идентификатору UUID",
                 "tags": [
                     "products"
@@ -904,6 +1326,14 @@ const docTemplate = `{
         },
         "/products/{id}/image": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает изображение продукта по его уникальному идентификатору",
                 "produces": [
                     "application/octet-stream"
@@ -947,6 +1377,14 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Загружает новое изображение для указанного продукта",
                 "consumes": [
                     "application/octet-stream"
@@ -1001,6 +1439,14 @@ const docTemplate = `{
         },
         "/products/{id}/stock": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Обновляет доступное количество товара на складе для указанного продукта",
                 "consumes": [
                     "application/json"
@@ -1061,6 +1507,14 @@ const docTemplate = `{
         },
         "/suppliers": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает список всех поставщиков в системе",
                 "produces": [
                     "application/json"
@@ -1088,6 +1542,14 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Создаёт нового поставщика вместе с его адресом в системе",
                 "consumes": [
                     "application/json"
@@ -1134,6 +1596,14 @@ const docTemplate = `{
         },
         "/suppliers/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Возвращает полные данные поставщика по уникальному идентификатору",
                 "produces": [
                     "application/json"
@@ -1180,6 +1650,14 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Обновляет адрес поставщика по его уникальному идентификатору",
                 "consumes": [
                     "application/json"
@@ -1235,6 +1713,14 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "OAuth2": []
+                    }
+                ],
                 "description": "Удаляет поставщика по уникальному идентификатору UUID",
                 "tags": [
                     "suppliers"
@@ -1306,28 +1792,6 @@ const docTemplate = `{
                 }
             }
         },
-        "hardware_store_internal_web_dto.AddressResponse": {
-            "description": "Данные адреса включая информацию о местоположении",
-            "type": "object",
-            "properties": {
-                "address_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "city": {
-                    "type": "string",
-                    "example": "Москва"
-                },
-                "country": {
-                    "type": "string",
-                    "example": "Россия"
-                },
-                "street": {
-                    "type": "string",
-                    "example": "Технопарк, 15"
-                }
-            }
-        },
         "hardware_store_internal_web_dto.CategoryRequest": {
             "description": "Запрос на создание новой категории товаров",
             "type": "object",
@@ -1354,6 +1818,29 @@ const docTemplate = `{
                 "category_id": {
                     "type": "string",
                     "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "hardware_store_internal_web_dto.ChangePasswordRequest": {
+            "description": "Данные для изменения пароля, требующие подтверждения текущим паролем",
+            "type": "object",
+            "required": [
+                "email",
+                "new_password",
+                "old_password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "new_password": {
+                    "type": "string",
+                    "example": "NewSecurePassword456!"
+                },
+                "old_password": {
+                    "type": "string",
+                    "example": "SecurePassword123!"
                 }
             }
         },
@@ -1423,6 +1910,24 @@ const docTemplate = `{
                 }
             }
         },
+        "hardware_store_internal_web_dto.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "validation error"
+                }
+            }
+        },
+        "hardware_store_internal_web_dto.GoogleAuthURLResponse": {
+            "description": "Содержит URL, на который нужно перенаправить пользователя для авторизации через Google",
+            "type": "object",
+            "properties": {
+                "auth_url": {
+                    "type": "string"
+                }
+            }
+        },
         "hardware_store_internal_web_dto.ImageResponse": {
             "description": "Данные изображения включая уникальный идентификатор",
             "type": "object",
@@ -1439,6 +1944,38 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "internal server error"
+                }
+            }
+        },
+        "hardware_store_internal_web_dto.LoginRequest": {
+            "description": "Учетные данные пользователя для входа в систему",
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "SecurePassword123!"
+                }
+            }
+        },
+        "hardware_store_internal_web_dto.LoginResponse": {
+            "description": "Пары токенов (Access и Refresh) для аутентификации последующих запросов",
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "refresh_token": {
+                    "type": "string",
+                    "example": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
                 }
             }
         },
@@ -1531,6 +2068,76 @@ const docTemplate = `{
                 }
             }
         },
+        "hardware_store_internal_web_dto.RefreshRequest": {
+            "description": "Принимает действующий Refresh токен и возвращает новую пару Access/Refresh токенов",
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string",
+                    "example": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                }
+            }
+        },
+        "hardware_store_internal_web_dto.RegisterRequest": {
+            "description": "Данные для создания новой учетной записи, включая email, пароль и контактную информацию",
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password",
+                "phone_number",
+                "surname"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Alice"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "SecurePassword123!"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+79990000000"
+                },
+                "surname": {
+                    "type": "string",
+                    "example": "Wonderland"
+                }
+            }
+        },
+        "hardware_store_internal_web_dto.RegisterResponse": {
+            "description": "Содержит уникальный идентификатор созданного пользователя",
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                }
+            }
+        },
+        "hardware_store_internal_web_dto.RestorePasswordRequest": {
+            "description": "Email пользователя для отправки инструкций по сбросу пароля",
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                }
+            }
+        },
         "hardware_store_internal_web_dto.SupplierRequest": {
             "description": "Запрос на создание нового поставщика с контактной информацией и адресом",
             "type": "object",
@@ -1597,21 +2204,47 @@ const docTemplate = `{
                 }
             }
         }
-    }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Введите токен в формате: \"Bearer \u003cваш_токен\u003e\"",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        },
+        "OAuth2": {
+            "type": "oauth2",
+            "flow": "accessCode",
+            "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+            "tokenUrl": "https://oauth2.googleapis.com/token",
+            "scopes": {
+                "email": "Просмотр вашего email",
+                "profile": "Просмотр вашего профиля"
+            }
+        }
+    },
+    "security": [
+        {
+            "BearerAuth": []
+        },
+        {
+            "OAuth2": []
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8081",
+	Host:             "",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Hardware Store API",
 	Description:      "REST API для магазина бытовой техники",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	//LeftDelim:        "{{",
-	//RightDelim:       "}}",
+	LeftDelim:        "{{",
+	RightDelim:       "}}",
 }
 
 func init() {

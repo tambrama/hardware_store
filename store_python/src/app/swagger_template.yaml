@@ -1,0 +1,17 @@
+openapi: 3.0.0
+info:
+  title: ShopAPI
+  description: REST API для магазина бытовой техники
+  version: "1.0"
+servers:
+  # Идём через Nginx. Пути в спеки будут переписаны на /api/v2 (см. app/api/__init__.py).
+  - url: /
+    description: Nginx gateway
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Вставьте **только токен** (без слова Bearer) — Swagger добавит `Bearer` сам."
+paths: {}

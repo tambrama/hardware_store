@@ -8,13 +8,13 @@ import (
 func ImageToDTO(i model.Images) dto.ImagesDTO {
 	return dto.ImagesDTO{
 		ImageID: i.ImageID,
-		Image:   i.Image,
+		// Image:   i.Image,
 	}
 }
 
 func ImageFromDTO(d dto.ImagesDTO) model.Images {
 	return model.Images{
 		ImageID: d.ImageID,
-		Image:   d.Image,
+		// Image:   d.Image,
 	}
 }

@@ -90,12 +90,12 @@ func ProductDomainToWeb(p product.Product) dto.ProductResponse {
 }
 
 // === Image mappers ===
-func ImageRequestToDomain(req dto.ImageRequest, imageID uuid.UUID) images.Images {
-	return images.Images{
-		ImageID: imageID,
-		Image:   req.Image,
-	}
-}
+// func ImageRequestToDomain(req dto.ImageRequest, imageID uuid.UUID) images.Images {
+// 	return images.Images{
+// 		ImageID: imageID,
+// 		Image:   req.Image,
+// 	}
+// }
 
 func ImageDomainToWeb(img images.Images) dto.ImageResponse {
 	return dto.ImageResponse{
